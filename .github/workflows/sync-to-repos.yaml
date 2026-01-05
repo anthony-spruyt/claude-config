@@ -78,6 +78,13 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-jwt.outputs.jwt }}
         run: |
+          # Debug: Test JWT with curl to get detailed error
+          echo "Testing JWT with curl..."
+          curl -s -w "\nHTTP Status: %{http_code}\n" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/app | head -20
+
           # Get all installations with their account info
           gh api /app/installations --jq '.[] | "\(.id):\(.account.login)"' > installations.txt
 
