@@ -33,12 +33,45 @@ git clone --depth 1 --branch "$CONFIG_BRANCH" --single-branch \
 git clone --depth 1 \
   "https://x-access-token:${GH_TOKEN}@github.com/${TARGET_REPO}.git" target
 
-# Ensure target has .claude directory
-mkdir -p target/.claude
+# Ensure target has .claude directory structure
+mkdir -p target/.claude/agents target/.claude/rules
 
-# Copy all config files
-echo "📋 Copying .claude files..."
-cp -r config/.claude/* target/.claude/
+# Sync files with "common-" prefix (our watermark for central config files)
+# This allows repos to have their own files without being overwritten
+echo "📋 Syncing common config files..."
+
+# 1. Always sync settings.json
+cp config/.claude/settings.json target/.claude/
+
+# 2. Sync hookify.common-*.local.md (delete removed, add new)
+for f in target/.claude/hookify.common-*.local.md; do
+  [ -e "$f" ] || continue
+  basename="${f##*/}"
+  [ -f "config/.claude/$basename" ] || rm -f "$f"
+done
+for f in config/.claude/hookify.common-*.local.md; do
+  [ -e "$f" ] && cp "$f" target/.claude/
+done
+
+# 3. Sync agents/common-*.md (delete removed, add new)
+for f in target/.claude/agents/common-*.md; do
+  [ -e "$f" ] || continue
+  basename="${f##*/}"
+  [ -f "config/.claude/agents/$basename" ] || rm -f "$f"
+done
+for f in config/.claude/agents/common-*.md; do
+  [ -e "$f" ] && cp "$f" target/.claude/agents/
+done
+
+# 4. Sync rules/common-*.md (delete removed, add new)
+for f in target/.claude/rules/common-*.md; do
+  [ -e "$f" ] || continue
+  basename="${f##*/}"
+  [ -f "config/.claude/rules/$basename" ] || rm -f "$f"
+done
+for f in config/.claude/rules/common-*.md; do
+  [ -e "$f" ] && cp "$f" target/.claude/rules/
+done
 
 # Check if anything changed (including new untracked files)
 cd target

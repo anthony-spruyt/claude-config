@@ -143,13 +143,28 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
 
 # File operations
 
-@test "sync-to-repo: ensures .claude directory exists" {
-  run grep -q "mkdir -p target/.claude" "$SCRIPT_PATH"
+@test "sync-to-repo: ensures .claude directory structure exists" {
+  run grep -q "mkdir -p target/.claude/agents target/.claude/rules" "$SCRIPT_PATH"
   assert_success
 }
 
-@test "sync-to-repo: copies .claude files" {
-  run grep -q "cp -r config/.claude/\* target/.claude/" "$SCRIPT_PATH"
+@test "sync-to-repo: copies settings.json" {
+  run grep -q "cp config/.claude/settings.json target/.claude/" "$SCRIPT_PATH"
+  assert_success
+}
+
+@test "sync-to-repo: syncs hookify.common-*.local.md files" {
+  run grep -q "hookify.common-\*.local.md" "$SCRIPT_PATH"
+  assert_success
+}
+
+@test "sync-to-repo: syncs agents/common-*.md files" {
+  run grep -q "agents/common-\*.md" "$SCRIPT_PATH"
+  assert_success
+}
+
+@test "sync-to-repo: syncs rules/common-*.md files" {
+  run grep -q "rules/common-\*.md" "$SCRIPT_PATH"
   assert_success
 }
 
@@ -289,11 +304,11 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
 
 # Line count validation (ensure script hasn't grown too complex)
 
-@test "sync-to-repo: script is under 150 lines" {
+@test "sync-to-repo: script is under 175 lines" {
   local line_count
   line_count=$(wc -l < "$SCRIPT_PATH")
 
-  [ "$line_count" -lt 150 ]
+  [ "$line_count" -lt 175 ]
 }
 
 # Script quality checks

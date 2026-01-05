@@ -53,9 +53,9 @@ This repository implements defense-in-depth with multiple security layers:
 
 2. **Command Blocking** ([.claude/settings.json](.claude/settings.json)) - Prevents executing commands that could expose secrets (base64 decode, sops/gpg decrypt, printenv, openssl decryption)
 
-3. **Hookify Rules** (`.claude/hookify.*.local.md`) - Event-based workflow automation and safety controls for Kubernetes operations, secret management, environment access, and workflow confirmation
+3. **Hookify Rules** (`.claude/hookify.common-*.local.md`) - Event-based workflow automation and safety controls for Kubernetes operations, secret management, environment access, and workflow confirmation
 
-**Complete list:** See [.claude/settings.json](.claude/settings.json) for file/command patterns and `.claude/hookify.*.local.md` files for active rules. All security layers are validated by automated tests in `tests/security/` and `tests/hooks/`.
+**Complete list:** See [.claude/settings.json](.claude/settings.json) for file/command patterns and `.claude/hookify.common-*.local.md` files for active rules. All security layers are validated by automated tests in `tests/security/` and `tests/hooks/`.
 
 ### Distribution Model
 
@@ -71,10 +71,9 @@ This repository implements defense-in-depth with multiple security layers:
 3. Workflow queries GitHub App installations to find target repositories
 4. For each target repo:
    - Clones both config and target repos
-   - Copies `.claude/*` to target repo
-   - Creates a branch with timestamp
-   - Commits changes
-   - Opens PR with detailed changelog and review checklist
+   - Syncs only `common-` prefixed files (preserves repo-specific config)
+   - Uses fixed branch `chore/update-claude-config` (one PR per repo)
+   - Opens or updates PR with changelog and review checklist
 
 **Webhook Automation (Optional):**
 
@@ -91,9 +90,25 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
   - PostToolUse hooks (auto-format with Prettier after edits)
   - Enabled plugins: context7, security-guidance, feature-dev, code-review, hookify
 
-- **`.claude/hookify.*.local.md`** - Hookify rules
-- **`.claude/rules/`** - Custom Claude Code rules
-- **`.claude/agents/`** - Custom agents
+- **`.claude/hookify.common-*.local.md`** - Shared hookify rules (synced from central config)
+- **`.claude/rules/common-*.md`** - Shared Claude Code rules (synced from central config)
+- **`.claude/agents/common-*.md`** - Shared agents (synced from central config)
+
+### File Naming Convention
+
+Files use a `common-` prefix to distinguish centrally-managed config from repo-specific config:
+
+| Pattern                                  | Source                  | Example                                 |
+| ---------------------------------------- | ----------------------- | --------------------------------------- |
+| `hookify.common-*.local.md`              | Central (synced)        | `hookify.common-block-secrets.local.md` |
+| `hookify.*.local.md` (without `common-`) | Repo-specific           | `hookify.my-project-rule.local.md`      |
+| `agents/common-*.md`                     | Central (synced)        | `agents/common-security-agent.md`       |
+| `agents/*.md` (without `common-`)        | Repo-specific           | `agents/my-project-agent.md`            |
+| `rules/common-*.md`                      | Central (synced)        | `rules/common-code-style.md`            |
+| `rules/*.md` (without `common-`)         | Repo-specific           | `rules/my-project-rules.md`             |
+| `settings.json`                          | Central (always synced) | Always overwritten                      |
+
+**Important:** The sync script only manages files with the `common-` prefix. Repo-specific files (without the prefix) are never modified or deleted by sync.
 
 ## Testing
 

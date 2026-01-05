@@ -5,7 +5,9 @@
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__plugin_context7_context7__query-docs",
       "Skill(hookify:list)",
-      "Skill(hookify:list:*)"
+      "Skill(hookify:list:*)",
+      "Bash(gh run list)",
+      "Bash(gh run list:*)"
     ],
     "deny": [
       "Read(./**/*id_rsa*)",

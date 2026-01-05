@@ -84,7 +84,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 1. block-sops-decrypt tests
 
 @test "hookify: block-sops-decrypt triggers on 'sops -d'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-decrypt.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-decrypt.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -93,7 +93,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-sops-decrypt triggers on 'sops --decrypt'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-decrypt.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-decrypt.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -102,7 +102,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-sops-decrypt allows 'sops -e' (encrypt)" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-decrypt.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-decrypt.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -111,7 +111,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-sops-decrypt allows 'sops --version'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-decrypt.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-decrypt.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -122,7 +122,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 2. block-env-grep tests
 
 @test "hookify: block-env-grep triggers on 'env | grep'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-env-grep.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-env-grep.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -131,7 +131,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-env-grep triggers on 'printenv | grep'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-env-grep.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-env-grep.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -140,7 +140,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-env-grep allows 'env | cut -d= -f1'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-env-grep.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-env-grep.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -149,7 +149,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-env-grep allows 'env | wc -l'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-env-grep.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-env-grep.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -160,7 +160,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 3. block-proc-environ tests
 
 @test "hookify: block-proc-environ triggers on 'cat /proc/self/environ'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-proc-environ.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-proc-environ.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -169,7 +169,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-proc-environ triggers on 'cat /proc/\$\$/environ'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-proc-environ.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-proc-environ.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -178,7 +178,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-proc-environ triggers on 'cat /proc/1234/environ'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-proc-environ.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-proc-environ.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -187,7 +187,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 }
 
 @test "hookify: block-proc-environ allows 'cat /proc/cpuinfo'" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-proc-environ.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-proc-environ.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -198,11 +198,11 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 4. block-kub3ctl-s3crets tests
 
 @test "hookify: block-kub3ctl-s3crets file exists" {
-  [ -f "$REPO_ROOT/.claude/hookify.block-kub3ctl-s3crets.local.md" ]
+  [ -f "$REPO_ROOT/.claude/hookify.common-block-kub3ctl-s3crets.local.md" ]
 }
 
 @test "hookify: block-kub3ctl-s3crets has valid frontmatter" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-kub3ctl-s3crets.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-s3crets.local.md"
 
   run validate_hookify_frontmatter "$rule_file"
   assert_success
@@ -211,11 +211,11 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 5. block-kub3ctl-exec-s3crets tests
 
 @test "hookify: block-kub3ctl-exec-s3crets file exists" {
-  [ -f "$REPO_ROOT/.claude/hookify.block-kub3ctl-exec-s3crets.local.md" ]
+  [ -f "$REPO_ROOT/.claude/hookify.common-block-kub3ctl-exec-s3crets.local.md" ]
 }
 
 @test "hookify: block-kub3ctl-exec-s3crets has valid frontmatter" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-kub3ctl-exec-s3crets.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-exec-s3crets.local.md"
 
   run validate_hookify_frontmatter "$rule_file"
   assert_success
@@ -224,11 +224,11 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 6. block-sops-read tests
 
 @test "hookify: block-sops-read file exists" {
-  [ -f "$REPO_ROOT/.claude/hookify.block-sops-read.local.md" ]
+  [ -f "$REPO_ROOT/.claude/hookify.common-block-sops-read.local.md" ]
 }
 
 @test "hookify: block-sops-read has valid frontmatter" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-read.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-read.local.md"
 
   run validate_hookify_frontmatter "$rule_file"
   assert_success
@@ -237,11 +237,11 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 7. block-talos-config tests
 
 @test "hookify: block-talos-config file exists" {
-  [ -f "$REPO_ROOT/.claude/hookify.block-talos-config.local.md" ]
+  [ -f "$REPO_ROOT/.claude/hookify.common-block-talos-config.local.md" ]
 }
 
 @test "hookify: block-talos-config has valid frontmatter" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-talos-config.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-talos-config.local.md"
 
   run validate_hookify_frontmatter "$rule_file"
   assert_success
@@ -250,11 +250,11 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 # 8. block-issue-close tests
 
 @test "hookify: block-issue-close file exists" {
-  [ -f "$REPO_ROOT/.claude/hookify.block-issue-close.local.md" ]
+  [ -f "$REPO_ROOT/.claude/hookify.common-block-issue-close.local.md" ]
 }
 
 @test "hookify: block-issue-close has valid frontmatter" {
-  local rule_file="$REPO_ROOT/.claude/hookify.block-issue-close.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-issue-close.local.md"
 
   run validate_hookify_frontmatter "$rule_file"
   assert_success
@@ -267,7 +267,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   run check_command_blocked "sops -d file.yaml"
   assert_success
 
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-decrypt.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-decrypt.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -280,7 +280,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   run check_command_blocked "printenv"
   assert_success
 
-  local rule_file="$REPO_ROOT/.claude/hookify.block-env-grep.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-env-grep.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -295,8 +295,8 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
     local basename
     basename=$(basename "$rule_file")
 
-    # Should start with hookify. and end with .local.md
-    [[ "$basename" =~ ^hookify\.block-.*\.local\.md$ ]]
+    # Should match hookify.common-*.local.md (common- prefix is our watermark)
+    [[ "$basename" =~ ^hookify\.common-.*\.local\.md$ ]]
   done < <(get_hookify_rules)
 }
 
@@ -333,7 +333,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_success
 
   # Layer 2: hookify rule
-  local rule_file="$REPO_ROOT/.claude/hookify.block-sops-decrypt.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-sops-decrypt.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
@@ -347,7 +347,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_success
 
   # Layer 2: hookify blocks env|grep
-  local rule_file="$REPO_ROOT/.claude/hookify.block-env-grep.local.md"
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-env-grep.local.md"
   local pattern
   pattern=$(extract_hookify_pattern "$rule_file")
 
