@@ -1,0 +1,83 @@
+---
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install bats-core
+        run: |
+          git clone --depth 1 https://github.com/bats-core/bats-core.git /tmp/bats-core
+          sudo /tmp/bats-core/install.sh /usr/local
+
+      - name: Install bats helpers
+        run: |
+          sudo mkdir -p /usr/local/lib/bats
+          sudo git clone --depth 1 https://github.com/bats-core/bats-support.git /usr/local/lib/bats/bats-support
+          sudo git clone --depth 1 https://github.com/bats-core/bats-assert.git /usr/local/lib/bats/bats-assert
+          sudo git clone --depth 1 https://github.com/bats-core/bats-file.git /usr/local/lib/bats/bats-file
+
+      - name: Verify bats installation
+        run: |
+          bats --version
+          ls -la /usr/local/lib/bats/
+
+      - name: Run security tests
+        run: |
+          echo "::group::Security Tests"
+          bats tests/security/
+          echo "::endgroup::"
+
+      - name: Run hooks tests
+        run: |
+          echo "::group::Hooks Tests"
+          bats tests/hooks/
+          echo "::endgroup::"
+
+      - name: Run unit tests
+        run: |
+          echo "::group::Unit Tests"
+          bats tests/unit/
+          echo "::endgroup::"
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          {
+            echo "## Test Results"
+            echo ""
+            echo "### Test Suite Execution"
+            echo "- ✅ Security tests completed"
+            echo "- ✅ Hooks tests completed"
+            echo "- ✅ Unit tests completed"
+            echo ""
+            echo "### Coverage"
+            echo "- ✅ File permission blocking (SSH keys, certs, credentials, env files, SOPS, etc.)"
+            echo "- ✅ Command blocking (base64, gpg, sops, printenv, age decryption)"
+            echo "- ✅ Hookify rules validation and behavior"
+            echo "- ✅ Sync-to-repo script validation"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/

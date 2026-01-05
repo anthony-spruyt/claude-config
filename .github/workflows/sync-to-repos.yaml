@@ -1,0 +1,57 @@
+name: Sync to Target Repos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude/**"
+  workflow_dispatch:
+
+jobs:
+  sync-all-installations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Get app installations
+        id: installations
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # Get all repos where app is installed
+          gh api /app/installations --jq '.[].id' > installation_ids.txt
+
+          # For each installation, get repos
+          : > repos.txt
+          while read -r installation_id; do
+            gh api "/app/installations/${installation_id}/repositories" \
+              --jq '.repositories[].full_name' >> repos.txt
+          done < installation_ids.txt
+
+          echo "Found $(wc -l < repos.txt) repositories:"
+          cat repos.txt
+
+      - name: Sync to each repository
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          while IFS= read -r repo; do
+            echo ""
+            echo "========================================"
+            echo "Syncing to $repo"
+            echo "========================================"
+            ./sync-to-repo.sh "$repo" || echo "⚠️  Failed to sync $repo (continuing...)"
+          done < repos.txt

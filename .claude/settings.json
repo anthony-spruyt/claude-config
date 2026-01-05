@@ -1,0 +1,67 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_context7_context7__get-library-docs",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Skill(hookify:list)",
+      "Skill(hookify:list:*)"
+    ],
+    "deny": [
+      "Read(./**/*id_rsa*)",
+      "Read(./**/*id_ed25519*)",
+      "Read(./**/*id_ecdsa*)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.pfx)",
+      "Read(./**/*.jks)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.credentials)",
+      "Read(./**/*credentials.json)",
+      "Read(./**/.aws/credentials)",
+      "Read(./**/.kube/config)",
+      "Read(./**/*kubeconfig*)",
+      "Read(./**/*.htpasswd)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./**/*.sops.*)",
+      "Read(./**/*token*)",
+      "Read(./**/*secret*)",
+      "Bash(base64 -d:*)",
+      "Bash(base64 --decode:*)",
+      "Bash(base64 -D:*)",
+      "Bash(openssl enc -d:*)",
+      "Bash(openssl pkcs12:*)",
+      "Bash(gpg -d:*)",
+      "Bash(gpg --decrypt:*)",
+      "Bash(printenv:*)",
+      "Bash(sops -d:*)",
+      "Bash(sops --decrypt:*)",
+      "Bash(sops exec-env:*)",
+      "Bash(sops exec-file:*)",
+      "Bash(age -d:*)",
+      "Bash(age --decrypt:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file_path=$(jq -r '.tool_input.file_path // .tool_input.notebook_path' < /dev/stdin); npx prettier --write \"$file_path\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true
+  }
+}

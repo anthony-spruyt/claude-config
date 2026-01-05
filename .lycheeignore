@@ -1,0 +1,2 @@
+# n8n workflow templates contain {{ variable }} syntax that creates invalid URLs
+https://api.github.com/repos/.*
