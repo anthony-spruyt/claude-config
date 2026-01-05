@@ -21,7 +21,7 @@ jobs:
 
       - name: Generate GitHub App JWT
         id: app-jwt
-        uses: jamestrousdale/github-app-jwt-token@v0.1.4
+        uses: jamestrousdale/github-app-jwt-token@0.1.4
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
