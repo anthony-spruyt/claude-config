@@ -79,16 +79,18 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
   assert_success
 }
 
-@test "sync-to-repo: creates timestamped branch name" {
-  run grep -q 'TIMESTAMP=$(date' "$SCRIPT_PATH"
-  assert_success
-
-  run grep -q 'BRANCH_NAME=.*update-config' "$SCRIPT_PATH"
+@test "sync-to-repo: uses fixed branch name for updates" {
+  run grep -q 'BRANCH_NAME="chore/update-claude-config"' "$SCRIPT_PATH"
   assert_success
 }
 
-@test "sync-to-repo: timestamp format is YYYYMMDD-HHMMSS" {
-  run grep -q 'date +%Y%m%d-%H%M%S' "$SCRIPT_PATH"
+@test "sync-to-repo: deletes existing branch before creating" {
+  run grep -q 'git push origin --delete.*BRANCH_NAME' "$SCRIPT_PATH"
+  assert_success
+}
+
+@test "sync-to-repo: checks for existing PR" {
+  run grep -q 'gh pr list --head.*BRANCH_NAME' "$SCRIPT_PATH"
   assert_success
 }
 
@@ -236,16 +238,7 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
   assert_output --partial "Review Checklist"
 }
 
-@test "sync-to-repo: PR adds labels" {
-  run grep -q -- "--label" "$SCRIPT_PATH"
-  assert_success
-}
-
-@test "sync-to-repo: PR labels include 'config'" {
-  run grep -- "--label" "$SCRIPT_PATH"
-  assert_success
-  assert_output --partial "config"
-}
+# Labels removed to avoid errors when target repo doesn't have them
 
 # Output and user feedback
 
