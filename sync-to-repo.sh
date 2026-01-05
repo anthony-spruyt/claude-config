@@ -73,6 +73,7 @@ git push -u origin "$BRANCH_NAME"
 # Create PR
 echo "🔀 Creating pull request..."
 PR_URL=$(gh pr create \
+  --head "$BRANCH_NAME" \
   --title "chore(config): update Claude config" \
   --body "## 🛡️ Config Update
 
