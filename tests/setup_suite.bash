@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 # Global test environment configuration
-export REPO_ROOT="/workspaces/claude-config"
+# Dynamically detect repo root (works in CI and devcontainer)
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export REPO_ROOT
 export SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 # Load bats helpers
