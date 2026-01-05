@@ -34,66 +34,38 @@ jobs:
 
           # Write private key to temp file (handles both escaped \n and real newlines)
           KEY_FILE=$(mktemp)
-          # Use sed -e with $'...' for proper newline replacement
           printf '%s' "$APP_PRIVATE_KEY" | sed -e $'s/\\\\n/\\\n/g' > "$KEY_FILE"
-
-          # Debug: Check key file format (just first/last lines, no content)
-          echo "Key file lines: $(wc -l < "$KEY_FILE")"
-          head -1 "$KEY_FILE"
-          tail -1 "$KEY_FILE"
 
           # Create JWT header and payload
           HEADER=$(printf '%s' '{"alg":"RS256","typ":"JWT"}' | base64 -w 0 | tr -d '=' | tr '/+' '_-')
           PAYLOAD=$(printf '%s' "{\"iat\":${IAT},\"exp\":${EXP},\"iss\":\"${APP_ID}\"}" | base64 -w 0 | tr -d '=' | tr '/+' '_-')
 
-          echo "Header: $HEADER"
-          echo "Payload: $PAYLOAD"
-
-          # Sign with private key (stderr separate, only binary output to base64)
-          SIGN_ERR=$(mktemp)
-          if ! SIGNATURE=$(printf '%s' "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" -binary 2>"$SIGN_ERR" | base64 -w 0 | tr -d '=' | tr '/+' '_-'); then
-            echo "::error::OpenSSL signing failed: $(cat "$SIGN_ERR")"
-            rm -f "$SIGN_ERR"
-            exit 1
-          fi
-          if [ -s "$SIGN_ERR" ]; then
-            echo "::warning::OpenSSL warnings: $(cat "$SIGN_ERR")"
-          fi
-          rm -f "$SIGN_ERR"
+          # Sign with private key
+          SIGNATURE=$(printf '%s' "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" -binary | base64 -w 0 | tr -d '=' | tr '/+' '_-')
 
           # Clean up key file
           rm -f "$KEY_FILE"
 
           JWT="${HEADER}.${PAYLOAD}.${SIGNATURE}"
 
-          # Debug: Show JWT structure (masked content)
-          echo "JWT parts: $(echo "$JWT" | tr '.' '\n' | wc -l)"
-
-          # Mask the JWT in logs
+          # Mask the JWT in logs and output
           echo "::add-mask::${JWT}"
           echo "jwt=${JWT}" >> "$GITHUB_OUTPUT"
 
-      - name: Get all installations
-        id: installations
+      - name: Sync to all installations
         env:
-          GH_TOKEN: ${{ steps.app-jwt.outputs.jwt }}
+          APP_JWT: ${{ steps.app-jwt.outputs.jwt }}
         run: |
-          # Debug: Test JWT with curl to get detailed error
-          echo "Testing JWT with curl..."
-          curl -s -w "\nHTTP Status: %{http_code}\n" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/app | head -20
+          total_repos=0
 
-          # Get all installations with their account info
-          gh api /app/installations --jq '.[] | "\(.id):\(.account.login)"' > installations.txt
+          # Get all installations using curl (gh cli has issues with JWT auth)
+          echo "Getting all installations..."
+          curl -s -H "Authorization: Bearer $APP_JWT" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/app/installations | jq -r '.[] | "\(.id):\(.account.login)"' > installations.txt
 
           echo "Found $(wc -l < installations.txt) installations:"
           cat installations.txt
-
-      - name: Sync to all installations
-        run: |
-          total_repos=0
 
           # Process each installation
           while IFS=: read -r installation_id owner; do
@@ -102,20 +74,28 @@ jobs:
             echo "Processing installation ${installation_id} (${owner})"
             echo "========================================"
 
-            # Get installation token using official action
-            token=$(gh api "/app/installations/${installation_id}/access_tokens" \
-              -H "Authorization: Bearer ${{ steps.app-jwt.outputs.jwt }}" \
-              -X POST --jq '.token')
+            # Get installation token using curl
+            token=$(curl -s -X POST \
+              -H "Authorization: Bearer $APP_JWT" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/app/installations/${installation_id}/access_tokens" | jq -r '.token')
 
-            # Get repos for this installation
-            repos=$(GH_TOKEN="${token}" gh api /installation/repositories --jq '.repositories[].full_name')
+            if [ -z "$token" ] || [ "$token" = "null" ]; then
+              echo "⚠️  Failed to get token for installation ${installation_id}"
+              continue
+            fi
+
+            # Get repos for this installation using curl
+            repos=$(curl -s -H "Authorization: Bearer $token" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/installation/repositories | jq -r '.repositories[].full_name')
 
             # Sync to each repo
             for repo in $repos; do
               echo ""
               echo "Syncing to ${repo}..."
               GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" || echo "⚠️  Failed to sync $repo (continuing...)"
-              ((total_repos++))
+              ((total_repos++)) || true
             done
           done < installations.txt
 
