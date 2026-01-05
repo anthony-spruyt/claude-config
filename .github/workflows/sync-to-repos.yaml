@@ -21,10 +21,29 @@ jobs:
 
       - name: Generate GitHub App JWT
         id: app-jwt
-        uses: jamestrousdale/github-app-jwt-token@0.1.4
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+        run: |
+          # Generate JWT for GitHub App authentication
+          # Based on: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app
+
+          NOW=$(date +%s)
+          IAT=$((NOW - 60))
+          EXP=$((NOW + 600))
+
+          # Create JWT header and payload
+          HEADER=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w 0 | tr -d '=' | tr '/+' '_-')
+          PAYLOAD=$(echo -n "{\"iat\":${IAT},\"exp\":${EXP},\"iss\":\"${APP_ID}\"}" | base64 -w 0 | tr -d '=' | tr '/+' '_-')
+
+          # Sign with private key
+          SIGNATURE=$(echo -n "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign <(echo "$APP_PRIVATE_KEY") | base64 -w 0 | tr -d '=' | tr '/+' '_-')
+
+          JWT="${HEADER}.${PAYLOAD}.${SIGNATURE}"
+
+          # Mask the JWT in logs
+          echo "::add-mask::${JWT}"
+          echo "jwt=${JWT}" >> "$GITHUB_OUTPUT"
 
       - name: Get all installations
         id: installations
