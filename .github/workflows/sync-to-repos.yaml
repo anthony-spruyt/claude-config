@@ -19,39 +19,53 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Get GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
+      - name: Generate GitHub App JWT
+        id: app-jwt
+        uses: jamestrousdale/github-app-jwt-token@v0.1.4
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Get app installations
+      - name: Get all installations
         id: installations
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-jwt.outputs.jwt }}
         run: |
-          # Get all repos where app is installed
-          gh api /app/installations --jq '.[].id' > installation_ids.txt
+          # Get all installations with their account info
+          gh api /app/installations --jq '.[] | "\(.id):\(.account.login)"' > installations.txt
 
-          # For each installation, get repos
-          : > repos.txt
-          while read -r installation_id; do
-            gh api "/app/installations/${installation_id}/repositories" \
-              --jq '.repositories[].full_name' >> repos.txt
-          done < installation_ids.txt
+          echo "Found $(wc -l < installations.txt) installations:"
+          cat installations.txt
 
-          echo "Found $(wc -l < repos.txt) repositories:"
-          cat repos.txt
-
-      - name: Sync to each repository
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Sync to all installations
         run: |
-          while IFS= read -r repo; do
+          total_repos=0
+
+          # Process each installation
+          while IFS=: read -r installation_id owner; do
             echo ""
             echo "========================================"
-            echo "Syncing to $repo"
+            echo "Processing installation ${installation_id} (${owner})"
             echo "========================================"
-            ./sync-to-repo.sh "$repo" || echo "⚠️  Failed to sync $repo (continuing...)"
-          done < repos.txt
+
+            # Get installation token using official action
+            token=$(gh api "/app/installations/${installation_id}/access_tokens" \
+              -H "Authorization: Bearer ${{ steps.app-jwt.outputs.jwt }}" \
+              -X POST --jq '.token')
+
+            # Get repos for this installation
+            repos=$(GH_TOKEN="${token}" gh api /installation/repositories --jq '.repositories[].full_name')
+
+            # Sync to each repo
+            for repo in $repos; do
+              echo ""
+              echo "Syncing to ${repo}..."
+              GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" || echo "⚠️  Failed to sync $repo (continuing...)"
+              ((total_repos++))
+            done
+          done < installations.txt
+
+          echo ""
+          echo "========================================"
+          echo "✅ Sync complete: ${total_repos} repositories processed"
+          echo "========================================"
