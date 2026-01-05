@@ -27,10 +27,12 @@ echo "💼 Working directory: ${WORK_DIR}"
 
 cd "$WORK_DIR"
 
-# Clone both repos
+# Clone both repos using HTTPS with token authentication
 echo "📥 Cloning repositories..."
-gh repo clone "$CONFIG_REPO" config -- --depth 1 --branch "$CONFIG_BRANCH" --single-branch
-gh repo clone "$TARGET_REPO" target -- --depth 1
+git clone --depth 1 --branch "$CONFIG_BRANCH" --single-branch \
+  "https://x-access-token:${GH_TOKEN}@github.com/${CONFIG_REPO}.git" config
+git clone --depth 1 \
+  "https://x-access-token:${GH_TOKEN}@github.com/${TARGET_REPO}.git" target
 
 # Ensure target has .claude directory
 mkdir -p target/.claude
