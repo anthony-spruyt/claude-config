@@ -39,23 +39,8 @@ jobs:
           bats --version
           ls -la /usr/local/lib/bats/
 
-      - name: Run security tests
-        run: |
-          echo "::group::Security Tests"
-          bats tests/security/
-          echo "::endgroup::"
-
-      - name: Run hooks tests
-        run: |
-          echo "::group::Hooks Tests"
-          bats tests/hooks/
-          echo "::endgroup::"
-
-      - name: Run unit tests
-        run: |
-          echo "::group::Unit Tests"
-          bats tests/unit/
-          echo "::endgroup::"
+      - name: Run tests
+        run: ./test.sh
 
       - name: Generate test summary
         if: always()
