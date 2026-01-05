@@ -39,9 +39,10 @@ mkdir -p target/.claude
 echo "📋 Copying .claude files..."
 cp -r config/.claude/* target/.claude/
 
-# Check if anything changed
+# Check if anything changed (including new untracked files)
 cd target
-if git diff --quiet .claude/; then
+git add .claude/
+if git diff --cached --quiet .claude/; then
   echo "✅ No changes detected - already up to date"
   exit 0
 fi
@@ -49,14 +50,13 @@ fi
 # Show what changed
 echo ""
 echo "📊 Changes detected:"
-git diff --stat .claude/
+git diff --cached --stat .claude/
 echo ""
 
-# Create branch and commit
+# Create branch and commit (files already staged from check above)
 echo "🌿 Creating branch: ${BRANCH_NAME}"
 git checkout -b "$BRANCH_NAME"
 
-git add .claude/
 git commit -m "chore(config): update Claude config
 
 Updated configuration from ${CONFIG_REPO}.
