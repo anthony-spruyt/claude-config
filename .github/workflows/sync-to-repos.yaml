@@ -32,12 +32,19 @@ jobs:
           IAT=$((NOW - 60))
           EXP=$((NOW + 600))
 
+          # Write private key to temp file (preserves newlines properly)
+          KEY_FILE=$(mktemp)
+          echo "$APP_PRIVATE_KEY" > "$KEY_FILE"
+
           # Create JWT header and payload
           HEADER=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w 0 | tr -d '=' | tr '/+' '_-')
           PAYLOAD=$(echo -n "{\"iat\":${IAT},\"exp\":${EXP},\"iss\":\"${APP_ID}\"}" | base64 -w 0 | tr -d '=' | tr '/+' '_-')
 
           # Sign with private key
-          SIGNATURE=$(echo -n "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign <(echo "$APP_PRIVATE_KEY") | base64 -w 0 | tr -d '=' | tr '/+' '_-')
+          SIGNATURE=$(echo -n "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" | base64 -w 0 | tr -d '=' | tr '/+' '_-')
+
+          # Clean up key file
+          rm -f "$KEY_FILE"
 
           JWT="${HEADER}.${PAYLOAD}.${SIGNATURE}"
 
