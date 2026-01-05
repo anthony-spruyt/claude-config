@@ -32,9 +32,9 @@ jobs:
           IAT=$((NOW - 60))
           EXP=$((NOW + 600))
 
-          # Write private key to temp file (preserves newlines properly)
+          # Write private key to temp file (handles both escaped \n and real newlines)
           KEY_FILE=$(mktemp)
-          echo "$APP_PRIVATE_KEY" > "$KEY_FILE"
+          printf '%s\n' "$APP_PRIVATE_KEY" | sed 's/\\n/\n/g' > "$KEY_FILE"
 
           # Create JWT header and payload
           HEADER=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w 0 | tr -d '=' | tr '/+' '_-')
