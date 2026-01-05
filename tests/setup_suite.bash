@@ -2,11 +2,17 @@
 
 # Global test environment configuration
 # Dynamically detect repo root (works in CI and devcontainer)
-# Use BATS_TEST_DIRNAME which is set by bats to the directory containing the test file
-if [ -n "$BATS_TEST_DIRNAME" ]; then
+if [ -n "$GITHUB_WORKSPACE" ]; then
+  # Running in GitHub Actions
+  REPO_ROOT="$GITHUB_WORKSPACE"
+elif command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
+  # Use git to find repo root (works anywhere in repo)
+  REPO_ROOT="$(git rev-parse --show-toplevel)"
+elif [ -n "$BATS_TEST_DIRNAME" ]; then
+  # Running with bats - BATS_TEST_DIRNAME is the directory containing the test file
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 else
-  # Fallback for when BATS_TEST_DIRNAME is not set
+  # Final fallback
   REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fi
 export REPO_ROOT
