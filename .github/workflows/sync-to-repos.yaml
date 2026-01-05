@@ -49,12 +49,17 @@ jobs:
           echo "Header: $HEADER"
           echo "Payload: $PAYLOAD"
 
-          # Sign with private key
-          if ! SIGNATURE=$(printf '%s' "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" 2>&1 | base64 -w 0 | tr -d '=' | tr '/+' '_-'); then
-            echo "::error::OpenSSL signing failed"
-            cat "$KEY_FILE" | head -1
+          # Sign with private key (stderr separate, only binary output to base64)
+          SIGN_ERR=$(mktemp)
+          if ! SIGNATURE=$(printf '%s' "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" -binary 2>"$SIGN_ERR" | base64 -w 0 | tr -d '=' | tr '/+' '_-'); then
+            echo "::error::OpenSSL signing failed: $(cat "$SIGN_ERR")"
+            rm -f "$SIGN_ERR"
             exit 1
           fi
+          if [ -s "$SIGN_ERR" ]; then
+            echo "::warning::OpenSSL warnings: $(cat "$SIGN_ERR")"
+          fi
+          rm -f "$SIGN_ERR"
 
           # Clean up key file
           rm -f "$KEY_FILE"
