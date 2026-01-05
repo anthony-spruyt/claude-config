@@ -113,27 +113,29 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
 # Git operations (structure tests)
 
 @test "sync-to-repo: clones config repo" {
-  run grep -q "gh repo clone.*CONFIG_REPO.*config" "$SCRIPT_PATH"
+  # Config repo clone uses CONFIG_REPO variable and outputs to 'config' directory
+  run grep -q 'CONFIG_REPO.*config' "$SCRIPT_PATH"
   assert_success
 }
 
 @test "sync-to-repo: clones target repo" {
-  run grep -q "gh repo clone.*TARGET_REPO.*target" "$SCRIPT_PATH"
+  # Target repo clone uses TARGET_REPO variable and outputs to 'target' directory
+  run grep -q 'TARGET_REPO.*target' "$SCRIPT_PATH"
   assert_success
 }
 
 @test "sync-to-repo: uses --depth 1 for shallow clone" {
-  run grep -q "gh repo clone.*--depth 1" "$SCRIPT_PATH"
+  run grep -q "git clone --depth 1" "$SCRIPT_PATH"
   assert_success
 }
 
 @test "sync-to-repo: specifies config branch" {
-  run grep -q "gh repo clone.*--branch.*CONFIG_BRANCH" "$SCRIPT_PATH"
+  run grep -q "git clone.*--branch.*CONFIG_BRANCH" "$SCRIPT_PATH"
   assert_success
 }
 
 @test "sync-to-repo: uses single-branch clone for config" {
-  run grep -q "gh repo clone.*--single-branch" "$SCRIPT_PATH"
+  run grep -q "git clone.*--single-branch" "$SCRIPT_PATH"
   assert_success
 }
 
@@ -150,7 +152,7 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
 }
 
 @test "sync-to-repo: checks for changes with git diff" {
-  run grep -q "git diff --quiet .claude/" "$SCRIPT_PATH"
+  run grep -q "git diff --cached --quiet .claude/" "$SCRIPT_PATH"
   assert_success
 }
 
