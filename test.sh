@@ -4,32 +4,26 @@ set -euo pipefail
 # Track exit codes
 EXIT_CODE=0
 
-# Get script directory and repo root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TESTS_DIR="$SCRIPT_DIR/tests"
-
-# Run all test suites from tests directory (so setup_suite.bash is loaded)
-cd "$TESTS_DIR"
+# Get repo root (where this script lives)
+export REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 echo "============================="
 echo "Running Security Tests"
 echo "============================="
-bats security/ || EXIT_CODE=$?
+bats "$REPO_ROOT/tests/security/" || EXIT_CODE=$?
 
 echo ""
 echo "============================="
 echo "Running Hooks Tests"
 echo "============================="
-bats hooks/ || EXIT_CODE=$?
+bats "$REPO_ROOT/tests/hooks/" || EXIT_CODE=$?
 
 echo ""
 echo "============================="
 echo "Running Unit Tests"
 echo "============================="
-bats unit/ || EXIT_CODE=$?
-
-# Return to original directory
-cd - >/dev/null
+bats "$REPO_ROOT/tests/unit/" || EXIT_CODE=$?
 
 echo ""
 echo "============================="

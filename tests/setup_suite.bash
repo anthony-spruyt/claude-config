@@ -1,22 +1,15 @@
 #!/usr/bin/env bash
 
 # Global test environment configuration
-# Dynamically detect repo root (works in CI and devcontainer)
-if [ -n "$GITHUB_WORKSPACE" ]; then
-  # Running in GitHub Actions
-  REPO_ROOT="$GITHUB_WORKSPACE"
-elif command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null; then
-  # Use git to find repo root (works anywhere in repo)
-  REPO_ROOT="$(git rev-parse --show-toplevel)"
-elif [ -n "$BATS_TEST_DIRNAME" ]; then
-  # Running with bats - BATS_TEST_DIRNAME is the directory containing the test file
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-else
-  # Final fallback
-  REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# REPO_ROOT and SETTINGS_FILE should be set by test.sh
+# This provides fallbacks for running individual test files directly
+if [ -z "$REPO_ROOT" ]; then
+  REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "/workspaces/claude-config")"
+  export REPO_ROOT
 fi
-export REPO_ROOT
-export SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
+if [ -z "$SETTINGS_FILE" ]; then
+  export SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
+fi
 
 # Load bats helpers
 load '/usr/local/lib/bats/bats-support/load.bash'
