@@ -94,7 +94,7 @@ jobs:
             for repo in $repos; do
               echo ""
               echo "Syncing to ${repo}..."
-              GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" || echo "⚠️  Failed to sync $repo (continuing...)"
+              GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" "$GITHUB_REPOSITORY" main || echo "⚠️  Failed to sync $repo (continuing...)"
               ((total_repos++)) || true
             done
           done < installations.txt
