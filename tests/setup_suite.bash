@@ -2,7 +2,13 @@
 
 # Global test environment configuration
 # Dynamically detect repo root (works in CI and devcontainer)
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Use BATS_TEST_DIRNAME which is set by bats to the directory containing the test file
+if [ -n "$BATS_TEST_DIRNAME" ]; then
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+else
+  # Fallback for when BATS_TEST_DIRNAME is not set
+  REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
 export REPO_ROOT
 export SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
