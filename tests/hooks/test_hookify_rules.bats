@@ -208,6 +208,73 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_success
 }
 
+@test "hookify: block-kub3ctl-s3crets triggers on 'kubectl get secret -o yaml'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-s3crets.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "kubectl get secret my-secret -o yaml"
+  assert_success
+}
+
+@test "hookify: block-kub3ctl-s3crets triggers on 'kubectl get secret -o go-template'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-s3crets.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "kubectl get secret my-secret -o go-template='{{.data.password}}'"
+  assert_success
+}
+
+@test "hookify: block-kub3ctl-s3crets allows plain 'kubectl get secrets'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-s3crets.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "kubectl get secrets"
+  assert_failure
+}
+
+# 4b. block-kub3ctl-describe-s3crets tests
+
+@test "hookify: block-kub3ctl-describe-s3crets file exists" {
+  [ -f "$REPO_ROOT/.claude/hookify.common-block-kub3ctl-describe-s3crets.local.md" ]
+}
+
+@test "hookify: block-kub3ctl-describe-s3crets has valid frontmatter" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-describe-s3crets.local.md"
+
+  run validate_hookify_frontmatter "$rule_file"
+  assert_success
+}
+
+@test "hookify: block-kub3ctl-describe-s3crets triggers on 'kubectl describe secret'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-describe-s3crets.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "kubectl describe secret my-secret"
+  assert_success
+}
+
+@test "hookify: block-kub3ctl-describe-s3crets triggers on 'kubectl describe secrets'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-describe-s3crets.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "kubectl describe secrets"
+  assert_success
+}
+
+@test "hookify: block-kub3ctl-describe-s3crets allows 'kubectl describe pod'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-block-kub3ctl-describe-s3crets.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "kubectl describe pod my-pod"
+  assert_failure
+}
+
 # 5. block-kub3ctl-exec-s3crets tests
 
 @test "hookify: block-kub3ctl-exec-s3crets file exists" {

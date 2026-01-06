@@ -225,6 +225,74 @@ teardown() {
   assert_output --partial "denied"
 }
 
+# Docker, NPM, and other credential files
+
+@test "blocks reading .docker/config.json files" {
+  local test_file="$TEST_DIR/.docker/config.json"
+  mkdir -p "$TEST_DIR/.docker"
+  echo '{"auths":{}}' > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading .config/gh/hosts.yml files" {
+  local test_file="$TEST_DIR/.config/gh/hosts.yml"
+  mkdir -p "$TEST_DIR/.config/gh"
+  echo "github.com:" > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading .npmrc files" {
+  local test_file="$TEST_DIR/.npmrc"
+  echo "//registry.npmjs.org/:_authToken=npm_xxx" > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading .pypirc files" {
+  local test_file="$TEST_DIR/.pypirc"
+  echo "[pypi]" > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading .netrc files" {
+  local test_file="$TEST_DIR/.netrc"
+  echo "machine github.com login user password xxx" > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading .vault-token files" {
+  local test_file="$TEST_DIR/.vault-token"
+  echo "s.xxxxx" > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading .ssh/config files" {
+  local test_file="$TEST_DIR/.ssh/config"
+  mkdir -p "$TEST_DIR/.ssh"
+  echo "Host *" > "$test_file"
+
+  run check_file_would_be_denied "$test_file"
+  assert_success
+  assert_output --partial "denied"
+}
+
 # Token and Secret Tests
 
 @test "blocks reading token files" {
@@ -271,6 +339,116 @@ teardown() {
   # Just verify package.json is not credentials.json
   local test_file="$TEST_DIR/package.json"
   [[ "$test_file" != *"credentials.json"* ]]
+}
+
+# Home directory (~) pattern tests
+
+@test "blocks reading ~/.ssh/id_rsa" {
+  run check_file_would_be_denied_absolute "$HOME/.ssh/id_rsa"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.ssh/id_ed25519" {
+  run check_file_would_be_denied_absolute "$HOME/.ssh/id_ed25519"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.ssh/config" {
+  run check_file_would_be_denied_absolute "$HOME/.ssh/config"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.aws/credentials" {
+  run check_file_would_be_denied_absolute "$HOME/.aws/credentials"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.kube/config" {
+  run check_file_would_be_denied_absolute "$HOME/.kube/config"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.docker/config.json" {
+  run check_file_would_be_denied_absolute "$HOME/.docker/config.json"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.config/gh/hosts.yml" {
+  run check_file_would_be_denied_absolute "$HOME/.config/gh/hosts.yml"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.npmrc" {
+  run check_file_would_be_denied_absolute "$HOME/.npmrc"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.pypirc" {
+  run check_file_would_be_denied_absolute "$HOME/.pypirc"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.netrc" {
+  run check_file_would_be_denied_absolute "$HOME/.netrc"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.vault-token" {
+  run check_file_would_be_denied_absolute "$HOME/.vault-token"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.gnupg/secring.gpg" {
+  run check_file_would_be_denied_absolute "$HOME/.gnupg/secring.gpg"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.gnupg/private-keys-v1.d/key.key" {
+  run check_file_would_be_denied_absolute "$HOME/.gnupg/private-keys-v1.d/key.key"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.password-store/secrets.gpg" {
+  run check_file_would_be_denied_absolute "$HOME/.password-store/secrets.gpg"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.password-store/work/api-keys.gpg" {
+  run check_file_would_be_denied_absolute "$HOME/.password-store/work/api-keys.gpg"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks reading ~/.ssh/keys/deploy.key" {
+  run check_file_would_be_denied_absolute "$HOME/.ssh/keys/deploy.key"
+  assert_success
+  assert_output --partial "denied"
+}
+
+# Allows safe home directory files
+
+@test "allows reading ~/.bashrc (not sensitive)" {
+  run check_file_would_be_denied_absolute "$HOME/.bashrc"
+  assert_failure
+}
+
+@test "allows reading ~/.profile (not sensitive)" {
+  run check_file_would_be_denied_absolute "$HOME/.profile"
+  assert_failure
 }
 
 # Settings validation test

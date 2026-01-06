@@ -1,8 +1,33 @@
 #!/usr/bin/env bash
 
 # Helper functions for security control testing
+#
+# PATTERN MATCHING REFERENCE:
+# ==========================
+# Claude Code uses TWO different pattern matching systems:
+#
+# 1. settings.json permissions (Read, Edit, Bash) - GITIGNORE PATTERNS
+#    - * matches anything EXCEPT /
+#    - ** matches anything INCLUDING /
+#    - ~/ = home directory ($HOME)
+#    - ./ = relative to working directory
+#    - // = absolute filesystem path
+#    Reference: https://git-scm.com/docs/gitignore
+#
+# 2. hookify rules (pattern: field) - PYTHON/PCRE REGEX
+#    - Standard regex: \s \S .* [a-z] (a|b) etc.
+#    Reference: https://docs.python.org/3/library/re.html
 
 # Check if file would be denied by ANY pattern in settings.json
+# IMPORTANT: This function tests files WITHIN the working directory only.
+# The ./**/ patterns in settings.json only apply relative to the working directory.
+# For absolute paths outside the repo, use check_file_would_be_denied_absolute().
+#
+# Uses gitignore pattern matching semantics:
+# - * matches anything EXCEPT /
+# - ** matches anything INCLUDING /
+# - ? matches single character except /
+#
 # Returns 0 (success) if file is DENIED, 1 if ALLOWED
 check_file_would_be_denied() {
   local file_path="$1"
@@ -27,29 +52,33 @@ check_file_would_be_denied() {
   local patterns
   patterns=$(echo "$denials" | grep -oP 'Read\(\K[^)]+')
 
-  # Check if the file path would match any of the glob patterns
+  # Only process ./**/ patterns (relative to working directory)
   while IFS= read -r pattern; do
-    # Extract the meaningful part of the pattern (after ./**/)
-    # ./**/*id_rsa* -> *id_rsa*
-    # ./**/*.pem -> *.pem
-    local file_pattern="${pattern#./**/}"
+    # Skip non-relative patterns (like ~/ patterns)
+    [[ "$pattern" != './'* ]] && continue
 
-    # Convert to regex:
-    # *id_rsa* -> .*id_rsa.*
-    # *.pem -> .*\.pem$
-    # *secret* -> .*secret.*
-    local pattern_regex
-    pattern_regex=$(echo "$file_pattern" | sed 's/\./\\./g' | sed 's/\*/\.\*/g')
+    # Convert gitignore pattern to regex
+    # Gitignore rules:
+    # - * matches anything except / -> [^/]*
+    # - ** matches anything including / -> .*
+    # - ? matches single char except / -> [^/]
+    # - . is literal -> \.
 
-    # If pattern doesn't start with .*, anchor it to path segments
-    if [[ ! "$pattern_regex" =~ ^\.\* ]]; then
-      pattern_regex="(^|/)$pattern_regex"
-    fi
+    # Strip leading ./ or ./**/ first
+    local pattern_regex="${pattern#./}"
+    pattern_regex="${pattern_regex#\*\*/}"
 
-    # If pattern doesn't end with .*, anchor it to end
-    if [[ ! "$pattern_regex" =~ \.\*$ ]]; then
-      pattern_regex="${pattern_regex}$"
-    fi
+    # Escape regex special chars (except * and ?)
+    pattern_regex=$(echo "$pattern_regex" | sed 's/\./\\./g' | sed 's/\[/\\[/g' | sed 's/\]/\\]/g')
+
+    # Convert ** to placeholder, then * to [^/]*, then placeholder back to .*
+    pattern_regex=$(echo "$pattern_regex" | sed 's/\*\*/\x00/g' | sed 's/\*/[^\/]*/g' | sed 's/\x00/.*/g')
+
+    # Convert ? to [^/]
+    pattern_regex=$(echo "$pattern_regex" | sed 's/?/[^\/]/g')
+
+    # Anchor - match anywhere in path (since ./**/ means recursive)
+    pattern_regex="(^|/)$pattern_regex(\$|/)"
 
     if echo "$file_path" | grep -qE "$pattern_regex"; then
       echo "denied by pattern: $pattern"
@@ -64,6 +93,65 @@ check_file_would_be_denied() {
 # Backward compatibility wrapper (deprecated)
 check_file_permission_denied() {
   check_file_would_be_denied "$1"
+}
+
+# Check if absolute file path would be denied by home directory (~) patterns
+# IMPORTANT: This only checks ~/ patterns - the ./**/ patterns do NOT apply to
+# arbitrary absolute paths, only to files within the working directory.
+# Returns 0 (success) if file is DENIED, 1 if ALLOWED
+check_file_would_be_denied_absolute() {
+  local file_path="$1"
+
+  # Check if jq is available
+  if ! command -v jq &> /dev/null; then
+    echo "jq not found - install jq to run file permission tests"
+    return 2
+  fi
+
+  # Read all file Read deny patterns from settings.json
+  local denials
+  denials=$(jq -r '.permissions.deny[] | select(startswith("Read"))' "$SETTINGS_FILE" 2>/dev/null)
+
+  if [ -z "$denials" ]; then
+    echo "No file permissions found in settings.json"
+    return 2
+  fi
+
+  # Extract patterns from Read(...) format
+  local patterns
+  patterns=$(echo "$denials" | grep -oP 'Read\(\K[^)]+')
+
+  # Check if the file path would match any of the patterns
+  while IFS= read -r pattern; do
+    # Only handle home directory patterns (~/...)
+    # The ./**/ patterns don't apply to arbitrary absolute paths!
+    # shellcheck disable=SC2088 # We're matching literal ~/ string, not expanding
+    if [[ "$pattern" == '~/'* ]]; then
+      # Expand ~ to actual home directory for comparison
+      local expanded_pattern="${pattern/#\~/$HOME}"
+
+      # Handle glob patterns
+      # ~/.ssh/* -> /home/user/.ssh/*
+      # ~/.ssh/**/* -> /home/user/.ssh/**/*
+      # Convert glob to regex
+      local pattern_regex
+
+      # Handle ** (recursive match) - replace **/* with .* to match any path
+      if [[ "$expanded_pattern" == *'**'* ]]; then
+        pattern_regex=$(echo "$expanded_pattern" | sed 's/\./\\./g' | sed 's/\*\*\/\*/.\*/g' | sed 's/\*/[^\/]*/g')
+      else
+        pattern_regex=$(echo "$expanded_pattern" | sed 's/\./\\./g' | sed 's/\*/[^\/]*/g')
+      fi
+
+      if echo "$file_path" | grep -qE "^$pattern_regex"; then
+        echo "denied by pattern: $pattern"
+        return 0
+      fi
+    fi
+  done <<< "$patterns"
+
+  # File not blocked by any pattern
+  return 1
 }
 
 # Check if command would be blocked by settings.json

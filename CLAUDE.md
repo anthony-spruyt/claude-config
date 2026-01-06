@@ -57,6 +57,58 @@ This repository implements defense-in-depth with multiple security layers:
 
 **Complete list:** See [.claude/settings.json](.claude/settings.json) for file/command patterns and `.claude/hookify.common-*.local.md` files for active rules. All security layers are validated by automated tests in `tests/security/` and `tests/hooks/`.
 
+### Pattern Matching Reference
+
+**IMPORTANT:** Claude Code uses two different pattern matching systems:
+
+#### 1. Permissions (settings.json) - Gitignore Patterns
+
+The `Read()`, `Edit()`, and `Bash()` rules in `permissions.deny` and `permissions.allow` use **[gitignore pattern syntax](https://git-scm.com/docs/gitignore)**:
+
+| Pattern | Meaning                            | Example                                           |
+| ------- | ---------------------------------- | ------------------------------------------------- |
+| `*`     | Matches anything **except** `/`    | `*.pem` matches `cert.pem` but NOT `dir/cert.pem` |
+| `**`    | Matches anything **including** `/` | `./**/*.pem` matches `dir/sub/cert.pem`           |
+| `~/`    | Home directory (`$HOME`)           | `~/.ssh/*` matches `$HOME/.ssh/id_rsa`            |
+| `./`    | Relative to working directory      | `./**/.env` matches `config/.env`                 |
+| `//`    | Absolute filesystem path           | `//etc/passwd`                                    |
+
+**Common mistakes:**
+
+- Using `*` when you need `**` for recursive matching
+- Forgetting that `./**/` only applies to the working directory, not `/tmp/` or other paths
+- Using `/path` (relative to settings file) instead of `//path` (absolute)
+
+#### 2. Hookify Rules - Python/PCRE Regex
+
+The `pattern:` field in hookify rules uses **Python-compatible regular expressions (PCRE)**:
+
+```yaml
+pattern: kubectl\s+describe\s+secrets?
+```
+
+Common regex features:
+
+- `\s+` - one or more whitespace
+- `\S+` - one or more non-whitespace
+- `.*` - any characters (greedy)
+- `(a|b)` - alternation
+- `secrets?` - optional character
+
+#### 3. Deny vs Allow Precedence
+
+**Critical:** `deny` rules are evaluated differently than `allow`:
+
+- **Deny wins over allow** - If a path matches both, it's denied
+- **More specific patterns don't override deny** - A deny on `*.env` cannot be overridden by allowing `test.env`
+- **Deny patterns must be exact** - Common mistake: adding `Read(.env)` without `./` prefix won't work
+
+If your deny rules aren't working:
+
+1. Check you're using the correct prefix (`./**/`, `~/`, `//`)
+2. Verify glob vs regex syntax (permissions use globs, hooks use regex)
+3. Test with the actual path Claude Code would use
+
 ### Distribution Model
 
 **Central Source of Truth:**
@@ -120,58 +172,18 @@ Uses **bats-core** for TDD testing of security controls and shell scripts. Run: 
 
 ### MegaLinter
 
-Configuration: [.mega-linter.yml](.mega-linter.yml)
-
-**Active Linters:**
-
-- `ACTION_ACTIONLINT` - GitHub Actions validation
-- `BASH_SHELLCHECK` - Shell script linting
-- `MARKDOWN_MARKDOWNLINT` - Markdown formatting
-- `REPOSITORY_GITLEAKS` - Secret detection
-- `REPOSITORY_SECRETLINT` - Secret pattern scanning
-- `REPOSITORY_TRIVY` - Security vulnerability scanning
-- `SPELL_LYCHEE` - Link validation
-- `YAML_YAMLLINT` - YAML syntax validation
-
-Run locally with `./lint.sh` or via CI on push/PR.
-
-**Output Location:**
-
-MegaLinter outputs reports and logs to `.output/` in the repository root. This directory is:
-
-- Created fresh on each run (removed and recreated)
-- Mapped from the MegaLinter container's `/tmp/lint/.output` to the host
-- Contains detailed linter reports, logs, and any auto-fixed files in `.output/updated_sources/`
-- Ignored by git (in [.gitignore](.gitignore))
-
-To check linting failures, inspect `.output/` after running [lint.sh](lint.sh).
+Configuration: [.mega-linter.yml](.mega-linter.yml). Run locally with `./lint.sh`. Output goes to `.output/` (check `*-ERROR.log` files on failure).
 
 ### GitHub Actions
 
-- **[.github/workflows/test.yaml](.github/workflows/test.yaml)** - Runs test suite on all pushes and PRs to main
-- **[.github/workflows/lint.yaml](.github/workflows/lint.yaml)** - Runs MegaLinter on all pushes and PRs to main
-- **[.github/workflows/sync-to-repos.yaml](.github/workflows/sync-to-repos.yaml)** - Auto-syncs `.claude/` changes to all repositories with the GitHub App installed
+- [test.yaml](.github/workflows/test.yaml) - Test suite on push/PR
+- [lint.yaml](.github/workflows/lint.yaml) - MegaLinter on push/PR
+- [sync-to-repos.yaml](.github/workflows/sync-to-repos.yaml) - Auto-syncs `.claude/` to target repos
 
 ### Dependabot
 
-Configuration: [.github/dependabot.yml](.github/dependabot.yml)
-
-Automatically updates:
-
-- Devcontainer features
-- GitHub Actions versions
-- NPM packages
+See [.github/dependabot.yml](.github/dependabot.yml) for auto-updates (Actions, npm, devcontainer).
 
 ## Devcontainer
 
-The devcontainer ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)) provides a standardized development environment with:
-
-- **Base:** Ubuntu (jammy)
-- **Features:** pre-commit, GitHub CLI, Docker-in-Docker, Node.js, Python
-- **Mounts:** SSH agent, `.claude` config, `.gitconfig`
-- **Extensions:** YAML, Git Graph, Prettier, Claude Code
-
-**Setup Scripts:**
-
-- [.devcontainer/post-create.sh](.devcontainer/post-create.sh) - Installs safe-chain, Claude Code CLI, pre-commit hooks, and bats-core testing framework
-- [.devcontainer/verify-setup.sh](.devcontainer/verify-setup.sh) - Validates setup
+See [DEVELOPMENT.md](DEVELOPMENT.md) for devcontainer setup and SSH agent configuration.

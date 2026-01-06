@@ -56,7 +56,12 @@ This repository implements defense-in-depth with three security layers:
 2. **Command Blocking** - Prevents commands that could expose secrets (base64, sops, printenv)
 3. **Hookify Rules** - Event-based safety controls for Kubernetes, SOPS, and environment access
 
-See [CLAUDE.md](CLAUDE.md) for complete security patterns.
+**Important:** Claude Code uses different pattern syntaxes:
+
+- **Permissions** (`settings.json`) use **[gitignore patterns](https://git-scm.com/docs/gitignore)** - `*` excludes `/`, use `**` for recursive
+- **Hookify rules** use **Python/PCRE regex** - standard regex syntax with `\s`, `.*`, etc.
+
+See [CLAUDE.md](CLAUDE.md) for detailed pattern matching reference and common mistakes.
 
 ## Usage
 
