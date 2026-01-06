@@ -15,24 +15,21 @@ load '../helpers/assertions'
 REPO_ROOT="${REPO_ROOT:-/workspaces/claude-config}"
 SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
-# Base64 Decode Tests
+# Base64 Decode Tests (blocked by hookify with guidance, not settings.json)
 
-@test "blocks base64 -d command" {
+@test "base64 -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "base64 -d secret.txt"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks base64 --decode command" {
+@test "base64 --decode not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "base64 --decode secret.txt"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks base64 -D command (BSD variant)" {
+@test "base64 -D not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "base64 -D secret.txt"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows base64 encode" {
@@ -45,18 +42,16 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# OpenSSL Tests
+# OpenSSL Tests (blocked by hookify with guidance, not settings.json)
 
-@test "blocks openssl enc -d command" {
+@test "openssl enc -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "openssl enc -d -aes-256-cbc -in encrypted.bin"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks openssl pkcs12 command" {
+@test "openssl pkcs12 not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "openssl pkcs12 -in cert.p12"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows openssl genrsa (key generation)" {
@@ -69,18 +64,16 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# GPG Tests
+# GPG Tests (blocked by hookify with guidance, not settings.json)
 
-@test "blocks gpg -d command" {
+@test "gpg -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "gpg -d encrypted.gpg"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks gpg --decrypt command" {
+@test "gpg --decrypt not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "gpg --decrypt encrypted.gpg"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows gpg encrypt" {
@@ -93,18 +86,16 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# Printenv Tests
+# Printenv Tests (blocked by hookify with guidance, not settings.json)
 
-@test "blocks printenv command" {
+@test "printenv not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "printenv"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks printenv with variable name" {
+@test "printenv with variable not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "printenv SECRET_KEY"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows echo (not printenv)" {
@@ -112,30 +103,26 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# SOPS Tests
+# SOPS Tests (blocked by hookify with guidance, not settings.json)
 
-@test "blocks sops -d command" {
+@test "sops -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops -d secrets.yaml"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks sops --decrypt command" {
+@test "sops --decrypt not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops --decrypt secrets.yaml"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks sops exec-env command" {
+@test "sops exec-env not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops exec-env secrets.yaml 'printenv'"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks sops exec-file command" {
+@test "sops exec-file not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops exec-file secrets.yaml 'cat {}'"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows sops --version" {
@@ -153,18 +140,16 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# Age Tests
+# Age Tests (blocked by hookify with guidance, not settings.json)
 
-@test "blocks age -d command" {
+@test "age -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "age -d encrypted.age"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
-@test "blocks age --decrypt command" {
+@test "age --decrypt not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "age --decrypt encrypted.age"
-  assert_success
-  assert_output --partial "denied"
+  assert_failure  # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows age encrypt" {
@@ -179,136 +164,19 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 # Settings validation tests
 
-@test "settings.json contains Bash command blocks" {
+@test "settings.json contains Read file blocks (Bash blocks moved to hookify)" {
   [ -f "$SETTINGS_FILE" ]
 
-  # Check that settings.json has Bash deny patterns
-  run jq -r '.permissions.deny[] | select(startswith("Bash"))' "$SETTINGS_FILE"
+  # Check that settings.json has Read deny patterns (Bash patterns now in hookify)
+  run jq -r '.permissions.deny[] | select(startswith("Read"))' "$SETTINGS_FILE"
   assert_success
-  assert_output --partial "Bash"
+  assert_output --partial "Read"
 }
 
-# Compound command tests (commands in pipelines should still be blocked)
+# Note: All Bash command blocks have been moved to hookify rules for better guidance.
+# The tests below verify settings.json no longer blocks these (hookify handles them).
 
-@test "blocks base64 decode in pipeline" {
-  run check_command_blocked "cat secret.txt | base64 -d"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks printenv in pipeline" {
-  run check_command_blocked "printenv | grep SECRET"
-  assert_success
-  assert_output --partial "denied"
-}
-
-# Chained command tests - dangerous command in middle or end of chain
-
-@test "blocks base64 -d chained with && at end" {
-  run check_command_blocked "ls && base64 -d secret.txt"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks gpg --decrypt chained with && at end" {
-  run check_command_blocked "cd /tmp && gpg --decrypt secrets.gpg"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks sops -d chained with && in middle" {
-  run check_command_blocked "ls && sops -d secrets.yaml && echo done"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks printenv chained with || at end" {
-  run check_command_blocked "cat file.txt || printenv"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks base64 --decode chained with ; at end" {
-  run check_command_blocked "echo test; base64 --decode secret.txt"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks sops --decrypt chained with ; in middle" {
-  run check_command_blocked "cd /home; sops --decrypt file.yaml; ls"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks age -d chained with && after multiple commands" {
-  run check_command_blocked "mkdir -p /tmp/work && cd /tmp/work && age -d encrypted.age"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks openssl enc -d chained with mixed operators" {
-  run check_command_blocked "ls && cd /tmp || openssl enc -d -aes-256-cbc -in file.enc"
-  assert_success
-  assert_output --partial "denied"
-}
-
-# Command substitution tests
-
-@test "blocks base64 -d in command substitution" {
-  run check_command_blocked 'echo $(base64 -d secret.txt)'
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks sops -d in command substitution" {
-  run check_command_blocked 'export SECRET=$(sops -d secrets.yaml)'
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks gpg -d in backtick substitution" {
-  run check_command_blocked 'echo `gpg -d secret.gpg`'
-  assert_success
-  assert_output --partial "denied"
-}
-
-# Subshell tests
-
-@test "blocks printenv in subshell" {
-  run check_command_blocked "(printenv | grep SECRET)"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks base64 -d in subshell after &&" {
-  run check_command_blocked "ls && (cd /tmp && base64 -d file.txt)"
-  assert_success
-  assert_output --partial "denied"
-}
-
-# Here-document and redirection edge cases
-
-@test "blocks base64 -d with input redirection" {
-  run check_command_blocked "base64 -d < encoded.txt"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks gpg --decrypt with output redirection" {
-  run check_command_blocked "ls && gpg --decrypt file.gpg > output.txt"
-  assert_success
-  assert_output --partial "denied"
-}
-
-# Multiple pipes with dangerous command in middle
-
-@test "blocks sops -d in middle of pipeline" {
-  run check_command_blocked "cat file.enc | sops -d /dev/stdin | jq ."
-  assert_success
-  assert_output --partial "denied"
-}
-
-# Negative tests - safe chained commands should not be blocked
+# Negative tests - safe commands should not be blocked by settings.json
 
 @test "allows safe commands chained with &&" {
   run check_command_blocked "ls && git status && echo done"
@@ -323,20 +191,6 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 @test "allows safe commands in subshell" {
   run check_command_blocked "(cd /tmp && ls -la)"
   assert_failure
-}
-
-# Edge cases
-
-@test "blocks commands with additional arguments" {
-  run check_command_blocked "base64 -d --ignore-garbage secret.txt"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks commands regardless of path" {
-  run check_command_blocked "/usr/bin/base64 -d secret.txt"
-  assert_success
-  assert_output --partial "denied"
 }
 
 # Negative tests - safe commands should not be blocked
