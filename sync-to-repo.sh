@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+shopt -s nullglob
 
 # Usage: ./sync-to-repo.sh USER/target-repo [config-repo] [config-branch]
 #
