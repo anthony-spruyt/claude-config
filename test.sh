@@ -5,7 +5,8 @@ set -euo pipefail
 EXIT_CODE=0
 
 # Get repo root (where this script lives)
-export REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export REPO_ROOT
 export SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 echo "============================="
