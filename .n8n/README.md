@@ -46,7 +46,7 @@ Target Repositories
 
 #### 3. Configure GitHub App Webhook
 
-1. Go to https://github.com/settings/apps/n8n-spruyt-labs
+1. Go to <https://github.com/settings/apps/n8n-spruyt-labs>
 2. Under **Webhook**:
    - **Webhook URL:** Copy from n8n webhook node (Production URL)
    - **Active:** ✅ Enabled
