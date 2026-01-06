@@ -1,0 +1,35 @@
+{
+  "files.exclude": {
+    ".devcontainer": false,
+    ".github": false,
+    ".output": false,
+    "node_modules": false,
+    ".gitignore": false,
+    ".lycheeignore": false,
+    ".markdownlint.json": false,
+    ".markdownlintignore": false,
+    ".mega-linter.yml": false,
+    ".pre-commit-config.yaml": false,
+    ".prettierignore": false,
+    ".prettierrc.yaml": false,
+    ".shellcheckrc": false,
+    ".trivyignore.yaml": false,
+    ".yamllint.yml": false,
+    "trivy.yaml": false
+  },
+  "search.exclude": {
+    "**/node_modules": true
+  },
+  "search.useIgnoreFiles": false,
+  "search.useGlobalIgnoreFiles": false,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveWorkspaceFilesOnly": true,
+  "editor.formatOnSave": true,
+  "editor.codeActions.triggerOnFocusChange": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.configPath": ".prettierrc.yaml",
+  "prettier.ignorePath": ".prettierignore",
+  "explorer.sortOrder": "type",
+  "editor.tabSize": 2,
+  "chat.agent.enabled": false
+}
