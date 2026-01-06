@@ -699,7 +699,47 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# 14. block-base64-decode tests
+# 14. warn-use-glob-tool tests
+
+@test "hookify: warn-use-glob-tool file exists" {
+  [ -f "$REPO_ROOT/.claude/hookify.common-warn-use-glob-tool.local.md" ]
+}
+
+@test "hookify: warn-use-glob-tool has valid frontmatter" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-warn-use-glob-tool.local.md"
+
+  run validate_hookify_frontmatter "$rule_file"
+  assert_success
+}
+
+@test "hookify: warn-use-glob-tool triggers on 'find path'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-warn-use-glob-tool.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "find . -name '*.ts'"
+  assert_success
+}
+
+@test "hookify: warn-use-glob-tool triggers on 'ls directory'" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-warn-use-glob-tool.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "ls -la src/"
+  assert_success
+}
+
+@test "hookify: warn-use-glob-tool allows bare 'ls' without args" {
+  local rule_file="$REPO_ROOT/.claude/hookify.common-warn-use-glob-tool.local.md"
+  local pattern
+  pattern=$(extract_hookify_pattern "$rule_file")
+
+  run matches_hookify_pattern "$pattern" "ls"
+  assert_failure
+}
+
+# 15. block-base64-decode tests
 
 @test "hookify: block-base64-decode file exists" {
   [ -f "$REPO_ROOT/.claude/hookify.common-block-base64-decode.local.md" ]
@@ -748,7 +788,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# 15. block-gpg-decrypt tests
+# 16. block-gpg-decrypt tests
 
 @test "hookify: block-gpg-decrypt file exists" {
   [ -f "$REPO_ROOT/.claude/hookify.common-block-gpg-decrypt.local.md" ]
@@ -797,7 +837,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# 16. block-openssl-decrypt tests
+# 17. block-openssl-decrypt tests
 
 @test "hookify: block-openssl-decrypt file exists" {
   [ -f "$REPO_ROOT/.claude/hookify.common-block-openssl-decrypt.local.md" ]
@@ -846,7 +886,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_failure
 }
 
-# 17. block-age-decrypt tests
+# 18. block-age-decrypt tests
 
 @test "hookify: block-age-decrypt file exists" {
   [ -f "$REPO_ROOT/.claude/hookify.common-block-age-decrypt.local.md" ]
