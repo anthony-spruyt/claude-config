@@ -5,7 +5,6 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "github-app-installation",
-        "responseMode": "onReceived",
         "options": {}
       },
       "id": "webhook-node",
@@ -32,14 +31,23 @@
                 "type": "string",
                 "operation": "equals"
               }
+            },
+            {
+              "id": "installation-repositories-event",
+              "leftValue": "={{ $json.headers['x-github-event'] }}",
+              "rightValue": "installation_repositories",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "or"
         },
         "options": {}
       },
-      "id": "filter-installation-events",
-      "name": "Filter Installation Events",
+      "id": "filter-events",
+      "name": "Filter Events",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
       "position": [450, 300]
@@ -54,7 +62,7 @@
           },
           "conditions": [
             {
-              "id": "installation-created",
+              "id": "action-created",
               "leftValue": "={{ $json.body.action }}",
               "rightValue": "created",
               "operator": {
@@ -63,9 +71,9 @@
               }
             },
             {
-              "id": "repositories-added",
-              "leftValue": "={{ $json.headers['x-github-event'] }}",
-              "rightValue": "installation_repositories",
+              "id": "action-added",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "added",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -76,39 +84,53 @@
         },
         "options": {}
       },
-      "id": "filter-relevant-actions",
-      "name": "Filter Relevant Actions",
+      "id": "filter-actions",
+      "name": "Filter Actions",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
       "position": [650, 300]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.github.com/repos/{{ $env.GITHUB_OWNER }}/{{ $env.GITHUB_REPO }}/actions/workflows/sync-to-repos.yaml/dispatches",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"ref\": \"main\"\n}",
-        "options": {}
+        "authentication": "oAuth2",
+        "resource": "workflow",
+        "owner": {
+          "__rl": true,
+          "value": "anthony-spruyt",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "claude-config",
+          "mode": "name"
+        },
+        "workflowId": {
+          "__rl": true,
+          "mode": "filename",
+          "value": "sync-to-repos.yaml"
+        },
+        "ref": {
+          "__rl": true,
+          "value": "main",
+          "mode": "name"
+        }
       },
       "id": "trigger-workflow",
       "name": "Trigger Workflow Dispatch",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
       "position": [850, 300],
       "credentials": {
-        "githubApi": {
-          "id": "github-pat",
-          "name": "GitHub PAT"
+        "githubOAuth2Api": {
+          "id": "github-oauth",
+          "name": "GitHub OAuth2"
         }
       }
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Workflow dispatch triggered\", \"event\": $json.headers['x-github-event'], \"action\": $json.body.action } }}",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Workflow dispatch triggered\" } }}",
         "options": {}
       },
       "id": "respond-success",
@@ -123,25 +145,25 @@
       "main": [
         [
           {
-            "node": "Filter Installation Events",
+            "node": "Filter Events",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Filter Installation Events": {
+    "Filter Events": {
       "main": [
         [
           {
-            "node": "Filter Relevant Actions",
+            "node": "Filter Actions",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Filter Relevant Actions": {
+    "Filter Actions": {
       "main": [
         [
           {
@@ -171,6 +193,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2026-01-05T12:00:00.000Z",
-  "versionId": "1"
+  "updatedAt": "2026-01-06T00:00:00.000Z",
+  "versionId": "9"
 }
