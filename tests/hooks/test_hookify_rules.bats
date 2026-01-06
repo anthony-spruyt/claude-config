@@ -319,20 +319,7 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_success
 }
 
-# 7. block-talos-config tests
-
-@test "hookify: block-talos-config file exists" {
-  [ -f "$REPO_ROOT/.claude/hookify.common-block-talos-config.local.md" ]
-}
-
-@test "hookify: block-talos-config has valid frontmatter" {
-  local rule_file="$REPO_ROOT/.claude/hookify.common-block-talos-config.local.md"
-
-  run validate_hookify_frontmatter "$rule_file"
-  assert_success
-}
-
-# 8. block-issue-close tests
+# 7. block-issue-close tests
 
 @test "hookify: block-issue-close file exists" {
   [ -f "$REPO_ROOT/.claude/hookify.common-block-issue-close.local.md" ]
