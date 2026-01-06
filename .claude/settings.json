@@ -3,6 +3,7 @@
     "allow": [
       "Bash(gh run list)",
       "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
       "Bash(git add:*)",
       "Bash(pre-commit:*)",
       "Bash(mkdir:*)",
