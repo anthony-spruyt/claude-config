@@ -1,13 +1,34 @@
 {
   "permissions": {
     "allow": [
+      "Bash(gh run list)",
+      "Bash(gh run list:*)",
+      "Bash(git add:*)",
+      "Bash(pre-commit:*)",
+      "Bash(mkdir:*)",
+      "Bash(renovate-config-validator:*)",
       "mcp__plugin_context7_context7__get-library-docs",
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__plugin_context7_context7__query-docs",
       "Skill(hookify:list)",
       "Skill(hookify:list:*)",
-      "Bash(gh run list)",
-      "Bash(gh run list:*)"
+      "Skill(hookify:writing-rules)",
+      "Skill(hookify:writing-rules:*)",
+      "WebFetch(domain:docs.ceph.com)",
+      "WebFetch(domain:docs.cilium.io)",
+      "WebFetch(domain:docs.goauthentik.io)",
+      "WebFetch(domain:docs.n8n.io)",
+      "WebFetch(domain:docs.siderolabs.com)",
+      "WebFetch(domain:docs.victoriametrics.com)",
+      "WebFetch(domain:falco.org)",
+      "WebFetch(domain:fluxcd.io)",
+      "WebFetch(domain:goauthentik.io)",
+      "WebFetch(domain:integrations.goauthentik.io)",
+      "WebFetch(domain:qdrant.tech)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:rook.io)",
+      "WebFetch(domain:talos.dev)",
+      "WebFetch(domain:www.talos.dev)"
     ],
     "deny": [
       "Read(./**/*id_rsa*)",

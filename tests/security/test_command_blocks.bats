@@ -202,6 +202,129 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
   assert_output --partial "denied"
 }
 
+# Chained command tests - dangerous command in middle or end of chain
+
+@test "blocks base64 -d chained with && at end" {
+  run check_command_blocked "ls && base64 -d secret.txt"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks gpg --decrypt chained with && at end" {
+  run check_command_blocked "cd /tmp && gpg --decrypt secrets.gpg"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks sops -d chained with && in middle" {
+  run check_command_blocked "ls && sops -d secrets.yaml && echo done"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks printenv chained with || at end" {
+  run check_command_blocked "cat file.txt || printenv"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks base64 --decode chained with ; at end" {
+  run check_command_blocked "echo test; base64 --decode secret.txt"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks sops --decrypt chained with ; in middle" {
+  run check_command_blocked "cd /home; sops --decrypt file.yaml; ls"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks age -d chained with && after multiple commands" {
+  run check_command_blocked "mkdir -p /tmp/work && cd /tmp/work && age -d encrypted.age"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks openssl enc -d chained with mixed operators" {
+  run check_command_blocked "ls && cd /tmp || openssl enc -d -aes-256-cbc -in file.enc"
+  assert_success
+  assert_output --partial "denied"
+}
+
+# Command substitution tests
+
+@test "blocks base64 -d in command substitution" {
+  run check_command_blocked 'echo $(base64 -d secret.txt)'
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks sops -d in command substitution" {
+  run check_command_blocked 'export SECRET=$(sops -d secrets.yaml)'
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks gpg -d in backtick substitution" {
+  run check_command_blocked 'echo `gpg -d secret.gpg`'
+  assert_success
+  assert_output --partial "denied"
+}
+
+# Subshell tests
+
+@test "blocks printenv in subshell" {
+  run check_command_blocked "(printenv | grep SECRET)"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks base64 -d in subshell after &&" {
+  run check_command_blocked "ls && (cd /tmp && base64 -d file.txt)"
+  assert_success
+  assert_output --partial "denied"
+}
+
+# Here-document and redirection edge cases
+
+@test "blocks base64 -d with input redirection" {
+  run check_command_blocked "base64 -d < encoded.txt"
+  assert_success
+  assert_output --partial "denied"
+}
+
+@test "blocks gpg --decrypt with output redirection" {
+  run check_command_blocked "ls && gpg --decrypt file.gpg > output.txt"
+  assert_success
+  assert_output --partial "denied"
+}
+
+# Multiple pipes with dangerous command in middle
+
+@test "blocks sops -d in middle of pipeline" {
+  run check_command_blocked "cat file.enc | sops -d /dev/stdin | jq ."
+  assert_success
+  assert_output --partial "denied"
+}
+
+# Negative tests - safe chained commands should not be blocked
+
+@test "allows safe commands chained with &&" {
+  run check_command_blocked "ls && git status && echo done"
+  assert_failure
+}
+
+@test "allows safe commands chained with ;" {
+  run check_command_blocked "cd /tmp; ls; pwd"
+  assert_failure
+}
+
+@test "allows safe commands in subshell" {
+  run check_command_blocked "(cd /tmp && ls -la)"
+  assert_failure
+}
+
 # Edge cases
 
 @test "blocks commands with additional arguments" {

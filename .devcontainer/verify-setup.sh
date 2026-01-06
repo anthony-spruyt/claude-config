@@ -63,6 +63,13 @@ else
   fail "SSH agent not available or no keys loaded"
 fi
 
+# 6. Python pathspec for gitignore pattern matching in tests
+if python3 -c "import pathspec" &>/dev/null; then
+  pass "Python pathspec is installed"
+else
+  fail "Python pathspec is not installed (run: pip3 install pathspec)"
+fi
+
 echo ""
 echo "Results: $PASSED passed, $FAILED failed"
 
