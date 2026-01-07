@@ -39,7 +39,7 @@ Template: `.github/ISSUE_TEMPLATE/<type>.md`
 
 ## Branch Naming
 
-Use `<type>/<description>` format matching [conventional commit types](conventional-commits.md):
+Use `<type>/<description>` format matching [conventional commit types](common-conventional-commits-and-naming.md):
 
 ## GitHub Issues
 
