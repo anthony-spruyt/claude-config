@@ -21,7 +21,7 @@ safe-chain setup-ci     # Executable shims for scripts/CI
 export PATH="$HOME/.safe-chain/shims:$PATH"
 
 echo "Installing remaining npm tools (now protected by safe-chain)..."
-npm install -g "@anthropic-ai/claude-code@$(node -p "require('./package.json').dependencies['@anthropic-ai/claude-code']")"
+npm install -g "@anthropic-ai/claude-code@$(node -p "require('./package.json').dependencies['@anthropic-ai/claude-code']")" --safe-chain-skip-minimum-package-age
 
 echo "Installing pre-commit hooks..."
 pre-commit install --install-hooks
