@@ -26,7 +26,8 @@
         "mhutchie.git-graph",
         "esbenp.prettier-vscode",
         "anthropic.claude-code",
-        "jetmartin.bats"
+        "jetmartin.bats",
+        "bierner.markdown-mermaid"
       ]
     }
   }

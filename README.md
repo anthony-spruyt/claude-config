@@ -29,21 +29,15 @@ Clone, open in VS Code, and reopen in devcontainer. See [DEVELOPMENT.md](DEVELOP
 
 ## Architecture
 
-```text
-                    ┌─────────────────────┐
-                    │   claude-config     │
-                    │  (central config)   │
-                    └──────────┬──────────┘
-                               │
-              GitHub Actions sync on push to main
-                               │
-        ┌──────────────────────┼──────────────────────┐
-        │                      │                      │
-        ▼                      ▼                      ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│   repo-a      │    │   repo-b      │    │   repo-c      │
-│  .claude/     │    │  .claude/     │    │  .claude/     │
-└───────────────┘    └───────────────┘    └───────────────┘
+```mermaid
+flowchart TB
+    config["claude-config<br/>(central config)"]
+
+    config --> sync{{"GitHub Actions sync<br/>on push to main"}}
+
+    sync --> repo-a["repo-a<br/>.claude/"]
+    sync --> repo-b["repo-b<br/>.claude/"]
+    sync --> repo-c["repo-c<br/>.claude/"]
 ```
 
 See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
