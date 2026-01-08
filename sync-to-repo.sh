@@ -98,10 +98,7 @@ git checkout -b "$BRANCH_NAME"
 
 git commit -m "chore(config): update Claude config
 
-Updated configuration from ${CONFIG_REPO}.
-
-🤖 Generated with Claude Code
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Updated configuration from ${CONFIG_REPO}."
 
 # Push branch
 echo "⬆️  Pushing branch to origin..."
