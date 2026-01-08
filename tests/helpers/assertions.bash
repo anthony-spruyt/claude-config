@@ -6,13 +6,14 @@
 # =========================
 # These helpers use the ACTUAL matching engines, not simulations:
 #
-# 1. File patterns (Read, Edit) - git check-ignore (gitignore semantics)
-# 2. Hookify patterns - Python re module (PCRE regex)
-# 3. Bash command patterns - prefix matching with shell parsing
+# 1. File patterns (Read, Edit) - Python pathspec (gitignore semantics)
+# 2. Bash command patterns - prefix matching with shell parsing
+#
+# NOTE: Hookify testing has been moved to tests/helpers/hookify/
+#       using the actual hookify Python implementation.
 #
 # References:
 # - gitignore: https://git-scm.com/docs/gitignore
-# - Python re: https://docs.python.org/3/library/re.html
 
 # =============================================================================
 # FILE PERMISSION CHECKS (using Python pathspec for gitignore semantics)
@@ -249,129 +250,4 @@ check_command_blocked() {
   done <<<"$subcommands"
 
   return 1
-}
-
-# =============================================================================
-# HOOKIFY PATTERN CHECKS (using Python re module for PCRE regex)
-# =============================================================================
-
-# Test if input matches a Python regex pattern
-# Uses actual Python re module for accurate matching
-# Returns 0 if MATCHES, 1 if no match
-matches_python_regex() {
-  local pattern="$1"
-  local input="$2"
-
-  python3 -c "
-import re
-import sys
-
-pattern = sys.argv[1]
-text = sys.argv[2]
-
-if re.search(pattern, text):
-    sys.exit(0)
-else:
-    sys.exit(1)
-" "$pattern" "$input" 2>/dev/null
-}
-
-# Test if command matches hookify pattern (Python regex)
-# Returns 0 (success) if command MATCHES (would be blocked), 1 if no match
-matches_hookify_pattern() {
-  local pattern="$1"
-  local command="$2"
-
-  if [ -z "$pattern" ] || [ -z "$command" ]; then
-    return 1
-  fi
-
-  matches_python_regex "$pattern" "$command"
-}
-
-# =============================================================================
-# HOOKIFY RULE FILE HELPERS
-# =============================================================================
-
-# Extract field from hookify rule YAML frontmatter
-_extract_hookify_field() {
-  local rule_file="$1"
-  local field="$2"
-
-  if [ ! -f "$rule_file" ]; then
-    echo "Rule file not found: $rule_file"
-    return 1
-  fi
-
-  sed -n '/^---$/,/^---$/p' "$rule_file" | grep "^${field}:" | cut -d: -f2- | sed 's/^ *//'
-}
-
-extract_hookify_pattern() {
-  _extract_hookify_field "$1" "pattern"
-}
-
-extract_hookify_enabled() {
-  _extract_hookify_field "$1" "enabled"
-}
-
-extract_hookify_name() {
-  _extract_hookify_field "$1" "name"
-}
-
-extract_hookify_event() {
-  _extract_hookify_field "$1" "event"
-}
-
-extract_hookify_action() {
-  _extract_hookify_field "$1" "action"
-}
-
-# Validate hookify frontmatter structure
-# Returns 0 if valid, 1 if invalid
-validate_hookify_frontmatter() {
-  local rule_file="$1"
-
-  if [ ! -f "$rule_file" ]; then
-    echo "Rule file not found: $rule_file"
-    return 1
-  fi
-
-  local frontmatter
-  frontmatter=$(sed -n '/^---$/,/^---$/p' "$rule_file")
-
-  # Required fields
-  echo "$frontmatter" | grep -q '^name:' || {
-    echo "Missing 'name' field"
-    return 1
-  }
-  echo "$frontmatter" | grep -q '^enabled:' || {
-    echo "Missing 'enabled' field"
-    return 1
-  }
-  echo "$frontmatter" | grep -q '^event:' || {
-    echo "Missing 'event' field"
-    return 1
-  }
-  echo "$frontmatter" | grep -q '^action:' || {
-    echo "Missing 'action' field"
-    return 1
-  }
-
-  # Must have pattern OR conditions
-  if ! echo "$frontmatter" | grep -q '^pattern:' && ! echo "$frontmatter" | grep -q '^conditions:'; then
-    echo "Missing 'pattern' or 'conditions' field"
-    return 1
-  fi
-
-  return 0
-}
-
-# Count hookify rules in .claude directory
-count_hookify_rules() {
-  find "$REPO_ROOT/.claude" -name 'hookify.*.local.md' 2>/dev/null | wc -l
-}
-
-# Get all hookify rule files
-get_hookify_rules() {
-  find "$REPO_ROOT/.claude" -name 'hookify.*.local.md' -type f 2>/dev/null | sort
 }

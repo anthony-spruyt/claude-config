@@ -40,7 +40,7 @@ echo "✅ bats-core installed"
 
 echo ""
 echo "Installing Python test dependencies..."
-pip3 install --quiet pathspec
+pip3 install --quiet pathspec pyyaml
 echo "✅ Python dependencies installed"
 
 echo ""
