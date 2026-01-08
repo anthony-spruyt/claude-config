@@ -164,9 +164,15 @@ Files use a `common-` prefix to distinguish centrally-managed config from repo-s
 
 ## Testing
 
-Uses **bats-core** for TDD testing of security controls and shell scripts. Run: `./test.sh`
+Uses **bats-core** for testing. Run: `./test.sh`
 
-**Adding tests:** Create `.bats` file in `tests/security/`, `tests/hooks/`, or `tests/unit/`, load helpers, write `@test` blocks. See existing files for patterns.
+- `tests/security/` - File permissions, command blocks (bats + Python pathspec)
+- `tests/hooks/` - Hookify rules (data-driven YAML + actual hookify engine)
+- `tests/unit/` - Shell script validation (bats)
+
+**Hookify tests:** Add test cases to [tests/hooks/hookify_test_cases.yaml](tests/hooks/hookify_test_cases.yaml) with expected outcome (block/warn/allow). Tests use the actual hookify Python implementation from `anthropics/claude-plugins-official`.
+
+**Python dependencies** (installed by devcontainer/CI): `pathspec`, `pyyaml`
 
 ## Linting & CI/CD
 

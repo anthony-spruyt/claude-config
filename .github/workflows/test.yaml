@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y jq python3-pip
-          pip3 install pathspec
+          pip3 install pathspec pyyaml
 
       - name: Install bats-core
         run: |
@@ -42,7 +42,12 @@ jobs:
           ls -la /usr/local/lib/bats/
 
       - name: Run tests
-        run: ./test.sh
+        id: tests
+        run: |
+          # Capture test output for summary
+          ./test.sh 2>&1 | tee test-output.txt
+          # Preserve exit code
+          exit "${PIPESTATUS[0]}"
 
       - name: Generate test summary
         if: always()
@@ -50,21 +55,22 @@ jobs:
           {
             echo "## Test Results"
             echo ""
-            echo "### Test Suite Execution"
-            echo "- ✅ Security tests completed"
-            echo "- ✅ Hooks tests completed"
-            echo "- ✅ Unit tests completed"
+            if [ "${{ steps.tests.outcome }}" = "success" ]; then
+              echo "### ✅ All tests passed"
+            else
+              echo "### ❌ Tests failed"
+            fi
             echo ""
-            echo "### Coverage"
-            echo "- ✅ File permission blocking (SSH keys, certs, credentials, env files, SOPS, etc.)"
-            echo "- ✅ Command blocking (base64, gpg, sops, printenv, age decryption)"
-            echo "- ✅ Hookify rules validation and behavior"
-            echo "- ✅ Sync-to-repo script validation"
+            echo "### Output"
+            echo '```'
+            # Show last 50 lines of output (the summary)
+            tail -50 test-output.txt
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload test results
-        if: always()
+      - name: Upload test output on failure
+        if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: test-results
-          path: tests/
+          name: test-output
+          path: test-output.txt
