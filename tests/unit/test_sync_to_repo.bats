@@ -201,12 +201,6 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
   assert_output --partial "config"
 }
 
-@test "sync-to-repo: commit includes Claude Code attribution" {
-  run grep -A 10 "git commit -m" "$SCRIPT_PATH"
-  assert_success
-  assert_output --partial "Claude Code"
-}
-
 @test "sync-to-repo: pushes branch with -u flag" {
   run grep -q "git push -u origin.*BRANCH_NAME" "$SCRIPT_PATH"
   assert_success

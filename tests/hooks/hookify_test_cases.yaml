@@ -371,3 +371,41 @@ test_cases:
     tool: Bash
     command: "ls"
     expect: allow
+
+  # =============================================================================
+  # Git Commit Workflow (block-git-commit-unverified) - repo-specific
+  # =============================================================================
+  - name: "block-git-commit-unverified: git commit -m blocked"
+    tool: Bash
+    command: "git commit -m 'test message'"
+    expect: block
+
+  - name: "block-git-commit-unverified: git commit --amend blocked"
+    tool: Bash
+    command: "git commit --amend"
+    expect: block
+
+  - name: "block-git-commit-unverified: chained git add && git commit blocked"
+    tool: Bash
+    command: "git add . && git commit -m 'test'"
+    expect: block
+
+  - name: "block-git-commit-unverified: command git bypass works"
+    tool: Bash
+    command: "command git commit -m 'test'"
+    expect: allow
+
+  - name: "block-git-commit-unverified: chained command git bypass works"
+    tool: Bash
+    command: "git add . && command git commit -m 'test'"
+    expect: allow
+
+  - name: "block-git-commit-unverified: prose text not blocked"
+    tool: Bash
+    command: "gh issue create --title 'convert git commit warning to block'"
+    expect: allow
+
+  - name: "block-git-commit-unverified: git commit mention without flag not blocked"
+    tool: Bash
+    command: "echo 'the git commit command is used for committing'"
+    expect: allow
