@@ -24,7 +24,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 
 - [ ] Issue exists or was created first
 - [ ] Commit references issue: `Ref #123`
-- [ ] On a feature branch (not main)
+- [ ] On a feature branch (**main is protected - cannot push directly**)
 - [ ] Will create PR after push
 
 See: `.claude/rules/workflow.md` and `.claude/rules/common-conventional-commits-and-naming.md`
