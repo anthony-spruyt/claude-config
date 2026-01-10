@@ -161,10 +161,11 @@ EOF
 
 ## Important Rules
 
-1. **Never push to main directly** - Always use branches and PRs
-2. **Never force push to shared branches** - Use `--force-with-lease`
-3. **Never commit secrets** - Check for API keys, passwords, tokens
-4. **Keep commits atomic** - One logical change per commit
+1. **Never use `git -C`** - Breaks bash whitelist patterns; run from working directory
+2. **Never push to main directly** - Always use branches and PRs
+3. **Never force push to shared branches** - Use `--force-with-lease`
+4. **Never commit secrets** - Check for API keys, passwords, tokens
+5. **Keep commits atomic** - One logical change per commit
 
 ## Output
 
