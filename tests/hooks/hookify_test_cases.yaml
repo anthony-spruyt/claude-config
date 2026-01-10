@@ -493,3 +493,63 @@ test_cases:
     tool: Bash
     command: "git merge feature-branch"
     expect: allow
+
+  # =============================================================================
+  # Branch Without Issue (block-branch-without-issue)
+  # =============================================================================
+  - name: "block-branch-without-issue: git checkout -b without issue blocked"
+    tool: Bash
+    command: "git checkout -b feat/add-auth"
+    expect: block
+
+  - name: "block-branch-without-issue: git branch without issue blocked"
+    tool: Bash
+    command: "git branch fix/login-bug"
+    expect: block
+
+  - name: "block-branch-without-issue: git checkout -b with issue allowed"
+    tool: Bash
+    command: "git checkout -b feat/add-auth-42"
+    expect: allow
+
+  - name: "block-branch-without-issue: git branch with issue allowed"
+    tool: Bash
+    command: "git branch fix/login-bug-15"
+    expect: allow
+
+  - name: "block-branch-without-issue: existing branch checkout allowed"
+    tool: Bash
+    command: "git checkout main"
+    expect: allow
+
+  # =============================================================================
+  # PR Without Issue (block-pr-without-issue)
+  # =============================================================================
+  - name: "block-pr-without-issue: gh pr create without issue blocked"
+    tool: Bash
+    command: "gh pr create --title 'feat: add auth' --body 'test'"
+    expect: block
+
+  # NOTE: gh pr create with issue# triggers warn from common-warn-pr-create
+  - name: "block-pr-without-issue: gh pr create with issue not blocked (but warns)"
+    tool: Bash
+    command: "gh pr create --title 'feat: add auth (#42)' --body 'test'"
+    expect: warn
+
+  - name: "block-pr-without-issue: gh pr create with scope and issue not blocked (but warns)"
+    tool: Bash
+    command: "gh pr create --title 'feat(api): add endpoint (#15)' --body 'test'"
+    expect: warn
+
+  # =============================================================================
+  # Warn PR Merge (common-warn-pr-merge)
+  # =============================================================================
+  - name: "common-warn-pr-merge: gh pr merge triggers warning"
+    tool: Bash
+    command: "gh pr merge 42"
+    expect: warn
+
+  - name: "common-warn-pr-merge: gh pr merge with flags triggers warning"
+    tool: Bash
+    command: "gh pr merge 42 --squash --delete-branch"
+    expect: warn

@@ -74,5 +74,4 @@ Examples:
 
 - Found existing: `Found existing issue: #123 - <title>`
 - Created new: `Created issue: #123 - <title>`
-
-The issue number (#123) is the key output for other workflows like git-workflow.
+- **Next:** Implement the work, then use **git-workflow** for #123
