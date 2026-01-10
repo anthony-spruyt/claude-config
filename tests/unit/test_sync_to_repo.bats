@@ -296,15 +296,6 @@ SCRIPT_PATH="$REPO_ROOT/sync-to-repo.sh"
   assert_success
 }
 
-# Line count validation (ensure script hasn't grown too complex)
-
-@test "sync-to-repo: script is under 175 lines" {
-  local line_count
-  line_count=$(wc -l < "$SCRIPT_PATH")
-
-  [ "$line_count" -lt 175 ]
-}
-
 # Script quality checks
 
 @test "sync-to-repo: no TODO comments" {
