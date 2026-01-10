@@ -3,7 +3,9 @@
 Native hook bridge for hookify rules.
 
 Loads hookify rules and applies them with proper feedback to Claude
-(via stderr + exit 2 for block, stderr + exit 0 for warn).
+(via stderr + exit 2 for block).
+
+For warnings, use --post flag (PostToolUse) to show after command runs.
 
 Workaround for: https://github.com/anthropics/claude-code/issues/12446
 """
@@ -12,6 +14,9 @@ import glob
 import json
 import sys
 from pathlib import Path
+
+# Check if running as PostToolUse (warnings only)
+POST_MODE = "--post" in sys.argv
 
 # =============================================================================
 # CONFIGURATION
@@ -87,27 +92,25 @@ def main():
     engine = RuleEngine()
     result = engine.evaluate_rules(rules, hook_input)
 
-    # If blocked, output message to stderr and exit 2
-    # This ensures Claude receives the message (not just the user)
-    if result.get("hookSpecificOutput", {}).get("permissionDecision") == "deny":
-        message = result.get("systemMessage", "Blocked by hookify rule")
-        print(message, file=sys.stderr)
-        sys.exit(2)
+    is_block = result.get("hookSpecificOutput", {}).get("permissionDecision") == "deny"
+    is_warn = result.get("systemMessage") and not result.get("hookSpecificOutput")
 
-    # If warning, output proper JSON format with systemMessage
-    # Per docs: systemMessage provides explanation/feedback to Claude
-    if result.get("systemMessage") and not result.get("hookSpecificOutput"):
-        message = result.get("systemMessage")
-        output = {
-            "hookSpecificOutput": {
-                "permissionDecision": "allow"
-            },
-            "systemMessage": message
-        }
-        print(json.dumps(output))
+    if POST_MODE:
+        # PostToolUse: only handle warnings (command already ran)
+        if is_warn:
+            message = result.get("systemMessage")
+            # Try stderr for PostToolUse - docs say exit 2 stderr goes to Claude
+            print(message, file=sys.stderr)
+            sys.exit(2)
         sys.exit(0)
-
-    sys.exit(0)
+    else:
+        # PreToolUse: only handle blocks (warnings handled by PostToolUse)
+        if is_block:
+            message = result.get("systemMessage", "Blocked by hookify rule")
+            print(message, file=sys.stderr)
+            sys.exit(2)
+        # Don't output warnings in PreToolUse - let PostToolUse handle them
+        sys.exit(0)
 
 
 if __name__ == "__main__":
