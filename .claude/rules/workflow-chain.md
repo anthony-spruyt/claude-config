@@ -91,15 +91,18 @@ flowchart TD
 
 ### CHANGES_REQUESTED (from pr-review)
 
+> **NEVER skip step 3.** Even if rejecting all comments, REPLY documents decisions in PR history. Do not jump to merge-workflow.
+
 1. `review-responder` READ → returns comments
 2. Main agent decides fix/reject for each (has conversation context)
-3. `review-responder` REPLY → posts acknowledgments/rejections
-4. Fix the issues marked for fixing
-5. `qa-workflow` (if configured)
-6. `git-workflow` → pushes to existing PR
-7. `review-responder` RESOLVE → resolves threads
-8. `pr-review` (if configured)
-9. If approved → `merge-workflow`
+3. `review-responder` REPLY → posts acknowledgments/rejections **(REQUIRED)**
+4. If all rejected → skip to step 9 (`merge-workflow`)
+5. Fix the issues marked for fixing
+6. `qa-workflow` (if configured)
+7. `git-workflow` → pushes to existing PR
+8. `review-responder` RESOLVE → resolves threads
+9. `pr-review` (if configured)
+10. If approved → `merge-workflow`
 
 ### CI FAILING (from merge-workflow)
 
