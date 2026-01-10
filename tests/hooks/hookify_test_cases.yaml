@@ -470,3 +470,26 @@ test_cases:
     tool: Bash
     command: "git log --oneline -5"
     expect: allow
+
+  # =============================================================================
+  # Git Merge Main/Master (common-block-git-merge-main)
+  # =============================================================================
+  - name: "common-block-git-merge-main: git merge main blocked"
+    tool: Bash
+    command: "git merge main"
+    expect: block
+
+  - name: "common-block-git-merge-main: git merge master blocked"
+    tool: Bash
+    command: "git merge master"
+    expect: block
+
+  - name: "common-block-git-merge-main: git merge origin/main blocked"
+    tool: Bash
+    command: "git merge origin/main"
+    expect: block
+
+  - name: "common-block-git-merge-main: git merge feature-branch allowed"
+    tool: Bash
+    command: "git merge feature-branch"
+    expect: allow

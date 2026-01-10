@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: '**ALWAYS USE THIS AGENT** for commits, branches, PRs, and issues. NEVER run git commit/push directly.\n\n**When to use:**\n- ANY git commit, push, branch, or PR operation\n- Creating or linking GitHub issues\n\n<example>\nContext: User asks to commit\nuser: "commit this"\nassistant: "I will use git-workflow agent to create the commit."\n[Uses Task tool with git-workflow agent]\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
+description: 'Handles commits, branches, PRs, and issues. **Pass issue number if known** (e.g., "for #123").\n\n**When to use:**\n- Creating commits, branches, PRs, or issues\n\n<example>\nContext: Committing changes\nuser: "Commit this fix for #42"\nassistant: "I will use git-workflow to commit with Ref #42."\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
 model: opus
 ---
 
@@ -107,7 +107,7 @@ EOF
 
 **BEFORE committing, you MUST:**
 
-1. **Check branch** - If on main/master, create a feature branch first
+1. **Check branch** - REFUSE to commit on main/master. Create a feature branch first.
 2. **Have an issue number:**
    - Was issue # provided? → Use it
    - No issue provided? → Search: `gh issue list --search "keywords"`
@@ -116,9 +116,10 @@ EOF
 **DO NOT PROCEED without a feature branch and issue number.**
 
 ```bash
-# 1. Check branch - create feature branch if on main/master
+# 1. REFUSE if on main/master - create feature branch first
 BRANCH=$(git branch --show-current)
 if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+  echo "ERROR: Cannot commit on $BRANCH. Creating feature branch..."
   git checkout -b <type>/<short-description>
 fi
 
@@ -137,8 +138,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 
-# 4. Auto-push to origin
-command git push -u origin $(git branch --show-current)
+# 4. Auto-push to feature branch (NEVER to main/master)
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" != "main" && "$BRANCH" != "master" ]]; then
+  command git push -u origin "$BRANCH"
+fi
 ```
 
 ### Creating a Pull Request
@@ -173,11 +177,12 @@ EOF
 
 ## Important Rules
 
-1. **Never use `git -C`** - Breaks bash whitelist patterns; run from working directory
-2. **Never push to main directly** - Always use branches and PRs
-3. **Never force push to shared branches** - Use `--force-with-lease`
-4. **Never commit secrets** - Check for API keys, passwords, tokens
-5. **Keep commits atomic** - One logical change per commit
+1. **REFUSE to push to main/master** - Even if asked. Always use feature branches and PRs.
+2. **REFUSE to merge to main/master** - Even if asked. Use `gh pr merge` after PR approval.
+3. **REFUSE to use `git -C`** - Breaks bash whitelist patterns. Run from working directory.
+4. **Never force push to shared branches** - Use `--force-with-lease` if absolutely needed.
+5. **Never commit secrets** - Check for API keys, passwords, tokens.
+6. **Keep commits atomic** - One logical change per commit.
 
 ## Output
 
