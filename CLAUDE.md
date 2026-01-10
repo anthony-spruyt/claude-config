@@ -181,13 +181,6 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
 
 Commands are user-invocable workflows in `.claude/commands/`. Invoke with `/command-name` or `/command-name arguments`.
 
-| Command                          | Description                                                       |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `/common-pr-review <PR#>`        | Review a PR against project standards using Conventional Comments |
-| `/common-pr-summary`             | Generate PR summary for current branch changes                    |
-| `/common-security-check [files]` | Scan for secrets and sensitive data before commit                 |
-| `/common-debug <issue>`          | Systematic debugging workflow using scientific method             |
-
 **Command file format:**
 
 ```yaml
@@ -211,24 +204,6 @@ Agents are specialized assistants in `.claude/agents/`. They can be referenced d
 | `code-reviewer` | opus   | Code quality review using [Conventional Comments](https://conventionalcomments.org/) |
 | `debugging`     | sonnet | Systematic debugging with scientific method                                          |
 | `git-workflow`  | sonnet | Git operations following project conventions                                         |
-
-**Agent file format:**
-
-```yaml
----
-name: agent-name
-description: Brief description.\n\n**When to use:**\n- condition 1\n- condition 2\n\n**When NOT to use:**\n- condition\n\n<example>\nContext: ...\nassistant: ...\n</example>
-model: opus|sonnet
----
-
-[Body content - actual agent instructions, checklists, output formats]
-```
-
-**Key points:**
-
-- `description` uses escaped `\n` newlines (NOT YAML multiline)
-- Activation context and examples go IN the description field
-- Body content is the actual agent instructions
 
 ### File Naming Convention
 
