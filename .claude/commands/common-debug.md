@@ -1,5 +1,4 @@
 ---
-name: debug
 description: Systematic debugging workflow using scientific method to isolate and fix issues
 allowed-tools: Read, Glob, Grep, Bash(git:*), WebFetch, WebSearch
 ---

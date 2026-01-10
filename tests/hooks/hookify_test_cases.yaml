@@ -442,3 +442,31 @@ test_cases:
     tool: Bash
     command: "command git push -u origin main"
     expect: warn
+
+  # =============================================================================
+  # Git Directory Flags (common-block-git-directory-flag)
+  # =============================================================================
+  - name: "common-block-git-directory-flag: git -C blocked"
+    tool: Bash
+    command: "git -C /some/path status"
+    expect: block
+
+  - name: "common-block-git-directory-flag: git --git-dir blocked"
+    tool: Bash
+    command: "git --git-dir=/some/path/.git status"
+    expect: block
+
+  - name: "common-block-git-directory-flag: git --work-tree blocked"
+    tool: Bash
+    command: "git --work-tree=/some/path status"
+    expect: block
+
+  - name: "common-block-git-directory-flag: normal git status allowed"
+    tool: Bash
+    command: "git status"
+    expect: allow
+
+  - name: "common-block-git-directory-flag: git log allowed"
+    tool: Bash
+    command: "git log --oneline -5"
+    expect: allow

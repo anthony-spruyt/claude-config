@@ -43,14 +43,6 @@ COMMANDS_DIR="$REPO_ROOT/.claude/commands"
   done
 }
 
-@test "commands: all common-*.md files have name field" {
-  for cmd in "$COMMANDS_DIR"/common-*.md; do
-    [ -e "$cmd" ] || continue
-    run grep -m1 "^name:" "$cmd"
-    assert_success
-  done
-}
-
 @test "commands: frontmatter is properly closed" {
   for cmd in "$COMMANDS_DIR"/common-*.md; do
     [ -e "$cmd" ] || continue
@@ -58,14 +50,5 @@ COMMANDS_DIR="$REPO_ROOT/.claude/commands"
     run bash -c "grep -c '^---$' '$cmd'"
     assert_success
     [ "$output" -ge 2 ]
-  done
-}
-
-@test "commands: name field matches expected pattern (no common- prefix)" {
-  for cmd in "$COMMANDS_DIR"/common-*.md; do
-    [ -e "$cmd" ] || continue
-    # Extract name value and ensure it doesn't have common- prefix
-    name=$(grep "^name:" "$cmd" | head -1 | sed 's/^name:[[:space:]]*//')
-    [[ ! "$name" =~ ^common- ]]
   done
 }
