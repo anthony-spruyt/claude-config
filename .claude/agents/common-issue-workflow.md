@@ -2,6 +2,7 @@
 name: issue-workflow
 description: 'Creates or finds GitHub issues. **Pass plan/description.**\n\n**Returns:** Issue number (#123)\n\n**When to use:**\n- After exiting plan mode, before starting implementation\n- Need an issue before committing\n- Creating a new issue for planned work\n\n<example>\nContext: Plan approved, starting implementation\nuser: "Plan looks good, proceed"\nassistant: "Using issue-workflow to create issue for this work before implementing."\n</example>\n\n<example>\nContext: Need issue for feature work\nuser: "Create an issue for adding dark mode support"\nassistant: "Using issue-workflow to create/find issue."\n</example>'
 model: opus
+allowed-tools: Bash(gh:*), Bash(ls:*), Bash(cat:*), Read
 ---
 
 You are a GitHub issue workflow assistant that finds existing issues or creates new ones.
