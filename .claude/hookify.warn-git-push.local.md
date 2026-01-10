@@ -2,7 +2,7 @@
 name: warn-git-push
 enabled: false
 event: bash
-pattern: git\s+push
+pattern: command\s+git\s+push
 action: warn
 ---
 
