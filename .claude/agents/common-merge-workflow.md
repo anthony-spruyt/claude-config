@@ -23,7 +23,7 @@ You are a merge workflow assistant that safely merges approved PRs after verifyi
 
 ```bash
 # Check if pr-review agent is configured
-test -f .claude/agents/pr-review.md || test -f .claude/agents/common-pr-review.md
+test -f .claude/agents/pr-review.md
 ```
 
 ### If pr-review exists:
@@ -68,13 +68,39 @@ if [ "$REVIEW_DECISION" == "CHANGES_REQUESTED" ]; then
 fi
 # Note: REVIEW_DECISION may be empty if no reviewers required
 
-# 3. Check CI status (if repo has required checks)
-gh pr checks "$PR_NUM" --required 2>/dev/null
-if [ $? -ne 0 ]; then
-  echo "ERROR: Required CI checks not passing. Fix failures before merging."
-  gh pr checks "$PR_NUM"
-  exit 1
-fi
+# 3. Check CI status (if repo has required checks) - WAIT for pending checks
+MAX_WAIT=600  # 10 minutes
+INTERVAL=30   # Check every 30 seconds
+WAITED=0
+
+while true; do
+  # Get check status
+  CHECKS=$(gh pr checks "$PR_NUM" 2>/dev/null)
+
+  # Check if any are still pending/in_progress
+  if echo "$CHECKS" | grep -qE '(pending|in_progress)'; then
+    if [ $WAITED -ge $MAX_WAIT ]; then
+      echo "ERROR: CI checks still pending after ${MAX_WAIT}s timeout"
+      gh pr checks "$PR_NUM"
+      exit 1
+    fi
+    echo "CI pending, waiting ${INTERVAL}s... (${WAITED}s/${MAX_WAIT}s)"
+    sleep $INTERVAL
+    WAITED=$((WAITED + INTERVAL))
+    continue
+  fi
+
+  # Check if any failed
+  if echo "$CHECKS" | grep -qE '(fail|error)'; then
+    echo "ERROR: CI checks failing. Fix failures before merging."
+    gh pr checks "$PR_NUM"
+    exit 1
+  fi
+
+  # All passed
+  echo "CI checks passed"
+  break
+done
 
 # 4. Check for merge conflicts
 MERGEABLE=$(gh pr view "$PR_NUM" --json mergeable --jq '.mergeable')
