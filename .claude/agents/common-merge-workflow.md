@@ -1,7 +1,7 @@
 ---
 name: merge-workflow
 description: 'Safely merges approved PRs. **Requires PR number**.\n\n**Auto-invokes pr-review** if configured (before merge).\n\n**Pre-merge checks:** Approval, CI, conflicts.\n\n**When to use:**\n- PR is approved and ready to merge\n- After review comments addressed\n\n**REFUSES to merge:**\n- Unapproved PRs (if approval required)\n- PRs with failing CI\n- PRs with merge conflicts\n\n<example>\nContext: PR approved, CI passing\nuser: "Merge PR #45"\nassistant: "Using merge-workflow to verify and merge."\n</example>'
-model: opus
+model: sonnet
 allowed-tools: Task, Bash(gh:*), Bash(test:*), Bash(ls:*), Read, Glob
 ---
 

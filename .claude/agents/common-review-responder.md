@@ -1,7 +1,7 @@
 ---
 name: review-responder
 description: 'Reads PR review comments and posts replies. **Requires PR number**.\n\n**Two modes:**\n1. **Read mode:** Returns comments for main agent to decide\n2. **Reply mode:** Posts replies with decisions from main agent\n\n<example>\nContext: Read comments\nuser: "Read review comments on PR #45"\nassistant: "Using review-responder to fetch comments."\n</example>\n\n<example>\nContext: Post replies\nuser: "Reply to PR #45: comment 123 fix, comment 456 reject (intentional)"\nassistant: "Using review-responder to post replies."\n</example>'
-model: opus
+model: sonnet
 allowed-tools: Bash(gh:*), Read, Glob, Grep
 ---
 
