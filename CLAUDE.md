@@ -193,7 +193,7 @@ allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(gh:*)
 Instructions with $ARGUMENTS placeholder for user input.
 ```
 
-**Note:** The command name is derived from the filename (e.g., `common-pr-review.md` → `/common-pr-review`).
+**Note:** The command name is derived from the filename (e.g., `common-debug.md` → `/common-debug`).
 
 ### Structured Agents
 
@@ -245,7 +245,7 @@ Files use a `common-` prefix to distinguish centrally-managed config from repo-s
 | `agents/*.md` (without `common-`)        | Repo-specific           | `agents/my-project-agent.md`            |
 | `rules/common-*.md`                      | Central (synced)        | `rules/common-code-style.md`            |
 | `rules/*.md` (without `common-`)         | Repo-specific           | `rules/my-project-rules.md`             |
-| `commands/common-*.md`                   | Central (synced)        | `commands/common-pr-review.md`          |
+| `commands/common-*.md`                   | Central (synced)        | `commands/common-debug.md`              |
 | `commands/*.md` (without `common-`)      | Repo-specific           | `commands/my-deploy.md`                 |
 | `settings.json`                          | Central (always synced) | Always overwritten                      |
 

@@ -65,11 +65,21 @@ query($owner: String!, $repo: String!, $pr: Int!) {
 }' -F owner="${REPO%/*}" -F repo="${REPO#*/}" -F pr="$PR_NUM" \
   --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length')
 
-if [ "$THREADS" = "0" ]; then
-  echo "No unresolved comment threads. Skipping."
-  exit 0
-fi
+echo "Unresolved threads: $THREADS"
 ```
+
+### 1b. Check for PR Comments
+
+PR comments (posted via `gh pr comment`) are different from review threads. Check for these too:
+
+```bash
+# Get PR comments (excluding bot comments)
+gh pr view "$PR_NUM" --json comments --jq '.comments[] | select(.author.login | test("\\[bot\\]$") | not) | {id: .id, author: .author.login, body: .body}'
+```
+
+**If both threads=0 AND no PR comments:** Return "No comments" and proceed to merge.
+
+**If either has content:** Return all for main agent to review.
 
 ### 2. Fetch Full Thread Details
 
@@ -105,6 +115,8 @@ query($owner: String!, $repo: String!, $pr: Int!) {
 
 When invoked with decisions from main agent:
 
+**For review threads:**
+
 ```bash
 # Post acknowledgment for FIX
 gh api "repos/${REPO}/pulls/${PR_NUM}/comments/${COMMENT_ID}/replies" \
@@ -113,6 +125,18 @@ gh api "repos/${REPO}/pulls/${PR_NUM}/comments/${COMMENT_ID}/replies" \
 # Post rejection with reason
 gh api "repos/${REPO}/pulls/${PR_NUM}/comments/${COMMENT_ID}/replies" \
   -f body='Keeping as-is: <reason from main agent>'
+```
+
+**For PR comments:**
+
+```bash
+# Reply to PR comment acknowledging feedback
+gh pr comment "$PR_NUM" --body "Re: review feedback
+
+**Issue 1 (CLAUDE.md refs):** Will fix - updating references.
+**Issue 2 (scope creep):** Keeping as-is - user explicitly requested this feature.
+
+Pushing fix shortly."
 ```
 
 ### 4. Resolve Threads
@@ -146,10 +170,11 @@ mutation($threadId: ID!) {
 
 - **PR:** #<number>
 - **Threads:** 0 unresolved
+- **PR Comments:** 0 (excluding bots)
 - **Next:** Proceed to **merge-workflow**
 ```
 
-### READ Mode - With Comments
+### READ Mode - With Review Threads
 
 ```markdown
 ## Result
@@ -157,12 +182,30 @@ mutation($threadId: ID!) {
 - **PR:** #<number>
 - **Threads:** <count> unresolved
 
-### Comments
+### Review Threads
 
 | ID  | Thread ID | File       | Line | Label            | Comment           |
 | --- | --------- | ---------- | ---- | ---------------- | ----------------- |
 | 123 | PRRT_xxx  | src/foo.ts | 42   | issue (blocking) | Add validation    |
 | 456 | PRRT_yyy  | README.md  | 10   | suggestion       | Consider renaming |
+
+- **Next:** Main agent decides actions, then call REPLY mode
+```
+
+### READ Mode - With PR Comments
+
+```markdown
+## Result
+
+- **PR:** #<number>
+- **Threads:** 0 unresolved
+- **PR Comments:** <count> (excluding bots)
+
+### PR Comments
+
+| Author | Summary                                                        |
+| ------ | -------------------------------------------------------------- |
+| user1  | Found 2 issues: 1) CLAUDE.md refs deleted file, 2) Scope creep |
 
 - **Next:** Main agent decides actions, then call REPLY mode
 ```
