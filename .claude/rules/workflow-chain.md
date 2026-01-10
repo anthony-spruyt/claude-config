@@ -96,7 +96,7 @@ flowchart TD
 1. `review-responder` READ → returns comments
 2. Main agent decides fix/reject for each (has conversation context)
 3. `review-responder` REPLY → posts acknowledgments/rejections **(REQUIRED)**
-4. If all rejected → skip to step 9 (`merge-workflow`)
+4. If all rejected → skip to step 10 (`merge-workflow`)
 5. Fix the issues marked for fixing
 6. `qa-workflow` (if configured)
 7. `git-workflow` → pushes to existing PR
