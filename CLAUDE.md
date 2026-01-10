@@ -181,17 +181,18 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
 
 Commands are user-invocable workflows in `.claude/commands/`. Invoke with `/command-name` or `/command-name arguments`.
 
-| Command                          | Description                                                       |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `/common-pr-review <PR#>`        | Review a PR against project standards using Conventional Comments |
-| `/common-pr-summary`             | Generate PR summary for current branch changes                    |
-| `/common-security-check [files]` | Scan for secrets and sensitive data before commit                 |
-| `/common-debug <issue>`          | Systematic debugging workflow using scientific method             |
+| Command                   | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| `/pr-review <PR#>`        | Review a PR against project standards using Conventional Comments |
+| `/pr-summary`             | Generate PR summary for current branch changes                    |
+| `/security-check [files]` | Scan for secrets and sensitive data before commit                 |
+| `/debug <issue>`          | Systematic debugging workflow using scientific method             |
 
 **Command file format:**
 
 ```yaml
 ---
+name: command-name
 description: What the command does
 allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(gh:*)
 ---
@@ -200,7 +201,7 @@ allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(gh:*)
 Instructions with $ARGUMENTS placeholder for user input.
 ```
 
-**Note:** The command name is derived from the filename (e.g., `common-pr-review.md` → `/common-pr-review`).
+**Note:** The `name` field defines the invocation name (e.g., `/pr-review`), while the filename uses `common-` prefix for sync (e.g., `common-pr-review.md`).
 
 ### Structured Agents
 

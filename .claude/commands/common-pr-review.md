@@ -1,4 +1,5 @@
 ---
+name: pr-review
 description: Review a pull request against project standards and security requirements
 allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(gh:*)
 ---

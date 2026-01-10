@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: '**ALWAYS USE THIS AGENT** for commits, branches, PRs, and issues. NEVER run git commit/push directly.\n\n**When to use:**\n- ANY git commit, push, branch, or PR operation\n- Creating or linking GitHub issues\n\n<example>\nContext: User asks to commit\nuser: "commit this"\nassistant: "I will use git-workflow agent to create the commit."\n[Uses Task tool with git-workflow agent]\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
+description: 'Handles commits, branches, PRs, and issues. Pass issue number if known (e.g., "for #123").\n\n**When to use:**\n- Creating commits, branches, PRs, or issues\n\n**When NOT to use:**\n- Code review (use code-reviewer)\n- Debugging\n\n<example>\nContext: Committing changes\nuser: "Commit this fix for #42"\nassistant: "I will use git-workflow to commit with Ref #42."\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
 model: opus
 ---
 
@@ -105,29 +105,20 @@ EOF
 
 ### Creating a Commit
 
-**BEFORE committing, you MUST:**
+**BEFORE committing, you MUST have an issue number:**
 
-1. **Check branch** - If on main/master, create a feature branch first
-2. **Have an issue number:**
-   - Was issue # provided? → Use it
-   - No issue provided? → Search: `gh issue list --search "keywords"`
-   - No existing issue? → Create one: `gh issue create --title "<type>(<scope>): description"`
+1. Was issue # provided? → Use it
+2. No issue provided? → Search: `gh issue list --search "keywords"`
+3. No existing issue? → Create one: `gh issue create --title "<type>(<scope>): description"`
 
-**DO NOT PROCEED without a feature branch and issue number.**
+**DO NOT PROCEED without an issue number.**
 
 ```bash
-# 1. Check branch - create feature branch if on main/master
-BRANCH=$(git branch --show-current)
-if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
-  git checkout -b <type>/<short-description>
-fi
-
-# 2. Stage and review changes
 git status
 git add <files>
 git diff --cached
 
-# 3. Commit with 'command git' to bypass verification hook
+# Use 'command git' to bypass the commit verification hook
 command git commit -m "$(cat <<'EOF'
 <type>(<scope>): <description>
 
@@ -136,9 +127,6 @@ Ref #<issue-number>
 Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
-
-# 4. Auto-push to origin
-command git push -u origin $(git branch --show-current)
 ```
 
 ### Creating a Pull Request
@@ -173,11 +161,10 @@ EOF
 
 ## Important Rules
 
-1. **Never use `git -C`** - Breaks bash whitelist patterns; run from working directory
-2. **Never push to main directly** - Always use branches and PRs
-3. **Never force push to shared branches** - Use `--force-with-lease`
-4. **Never commit secrets** - Check for API keys, passwords, tokens
-5. **Keep commits atomic** - One logical change per commit
+1. **Never push to main directly** - Always use branches and PRs
+2. **Never force push to shared branches** - Use `--force-with-lease`
+3. **Never commit secrets** - Check for API keys, passwords, tokens
+4. **Keep commits atomic** - One logical change per commit
 
 ## Output
 

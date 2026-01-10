@@ -1,4 +1,5 @@
 ---
+name: security-check
 description: Run security checks on staged files or specified paths for secrets and sensitive data
 allowed-tools: Read, Glob, Grep, Bash(git:*)
 ---
