@@ -1,3 +1,6 @@
 # n8n workflow templates contain {{ variable }} syntax that creates invalid URLs
 # GitHub API URLs require authentication and can't be validated
 https://api.github.com/.*
+
+# conventionalcommits.org has intermittent SSL issues in CI
+https://www.conventionalcommits.org/.*
