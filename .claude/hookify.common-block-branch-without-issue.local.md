@@ -2,7 +2,7 @@
 name: block-branch-without-issue
 enabled: false
 event: bash
-pattern: git\s+(checkout\s+-b|branch)\s+(?!\S+-\d+(\s|$))\S+
+pattern: git\s+(checkout\s+-b|branch\s+(?!-|--show|--list|--all|-[arlvd]))\s*(?!\S+-\d+(\s|$))\S+
 action: block
 ---
 
