@@ -55,7 +55,34 @@ This repository implements defense-in-depth with multiple security layers:
 
 3. **Hookify Rules** (`.claude/hookify.common-*.local.md`) - Event-based workflow automation and safety controls for Kubernetes operations, secret management, environment access, and workflow confirmation
 
+4. **Native Hook Bridge** ([.claude/hooks/common-hookify-bridge.py](.claude/hooks/common-hookify-bridge.py)) - Workaround for [#12446](https://github.com/anthropics/claude-code/issues/12446) where hookify plugin doesn't pass blocking messages to Claude
+
 **Complete list:** See [.claude/settings.json](.claude/settings.json) for file/command patterns and `.claude/hookify.common-*.local.md` files for active rules. All security layers are validated by automated tests in `tests/security/` and `tests/hooks/`.
+
+### Hookify Bridge Workaround
+
+Due to [GitHub issue #12446](https://github.com/anthropics/claude-code/issues/12446), the hookify plugin doesn't pass blocking/warning messages to Claude - only to the user. This means Claude doesn't know why a command was blocked and can't adjust its behavior.
+
+**Solution:** A native hook bridge that processes hookify rules with proper feedback to Claude via stderr + exit 2.
+
+**How it works:**
+
+1. Hookify rules have `enabled: false` so the hookify plugin skips them
+2. The native bridge ([common-hookify-bridge.py](.claude/hooks/common-hookify-bridge.py)) loads disabled rules
+3. Bridge outputs block messages via stderr + exit 2 (Claude receives them)
+4. Shared Python module at `.claude/lib/common_hookify/` used by both bridge and tests
+
+**Rule states:**
+
+| `enabled` | `bridgeEnabled`  | Result                                               |
+| --------- | ---------------- | ---------------------------------------------------- |
+| `true`    | (ignored)        | Hookify plugin handles (messages don't reach Claude) |
+| `false`   | `true` (default) | Bridge handles (messages reach Claude)               |
+| `false`   | `false`          | Truly disabled (neither handles)                     |
+
+**When #12446 is fixed:** Set `enabled: true` on rules to switch back to hookify handling.
+
+**Important for tests:** Use `include_disabled=True` when calling `load_rules()` since all rules have `enabled: false`.
 
 ### Pattern Matching Reference
 
@@ -139,10 +166,13 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
 
 - **[.claude/settings.json](.claude/settings.json)** - Core configuration:
   - Permission denials for sensitive files/commands
+  - PreToolUse hooks (hookify bridge for Bash commands)
   - PostToolUse hooks (auto-format with Prettier after edits)
   - Enabled plugins: context7, security-guidance, feature-dev, code-review, hookify
 
 - **`.claude/hookify.common-*.local.md`** - Shared hookify rules (synced from central config)
+- **`.claude/hooks/common-*.py`** - Native hook scripts (synced from central config)
+- **`.claude/lib/common_hookify/`** - Shared Python module for hookify processing
 - **`.claude/rules/common-*.md`** - Shared Claude Code rules (synced from central config)
 - **`.claude/agents/common-*.md`** - Shared agents (synced from central config)
 
@@ -154,6 +184,9 @@ Files use a `common-` prefix to distinguish centrally-managed config from repo-s
 | ---------------------------------------- | ----------------------- | --------------------------------------- |
 | `hookify.common-*.local.md`              | Central (synced)        | `hookify.common-block-secrets.local.md` |
 | `hookify.*.local.md` (without `common-`) | Repo-specific           | `hookify.my-project-rule.local.md`      |
+| `hooks/common-*.py`                      | Central (synced)        | `hooks/common-hookify-bridge.py`        |
+| `hooks/*.py` (without `common-`)         | Repo-specific           | `hooks/my-project-hook.py`              |
+| `lib/common_*`                           | Central (synced)        | `lib/common_hookify/`                   |
 | `agents/common-*.md`                     | Central (synced)        | `agents/common-security-agent.md`       |
 | `agents/*.md` (without `common-`)        | Repo-specific           | `agents/my-project-agent.md`            |
 | `rules/common-*.md`                      | Central (synced)        | `rules/common-code-style.md`            |
@@ -170,7 +203,9 @@ Uses **bats-core** for testing. Run: `./test.sh`
 - `tests/hooks/` - Hookify rules (data-driven YAML + actual hookify engine)
 - `tests/unit/` - Shell script validation (bats)
 
-**Hookify tests:** Add test cases to [tests/hooks/hookify_test_cases.yaml](tests/hooks/hookify_test_cases.yaml) with expected outcome (block/warn/allow). Tests use the actual hookify Python implementation from `anthropics/claude-plugins-official`.
+**Hookify tests:** Add test cases to [tests/hooks/hookify_test_cases.yaml](tests/hooks/hookify_test_cases.yaml) with expected outcome (block/warn/allow). Tests use the shared hookify module from `.claude/lib/common_hookify/`.
+
+**Important:** Since all hookify rules have `enabled: false` (due to the bridge workaround), tests must use `include_disabled=True` when calling `load_rules()`. See [tests/helpers/run_hookify_tests.py](tests/helpers/run_hookify_tests.py) for the pattern.
 
 **Python dependencies** (installed by devcontainer/CI): `pathspec`, `pyyaml`
 
