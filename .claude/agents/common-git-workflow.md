@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: 'Handles commits, branches, PRs, and issues. Pass issue number if known (e.g., "for #123").\n\n**When to use:**\n- Creating commits, branches, PRs, or issues\n\n**When NOT to use:**\n- Code review (use code-reviewer)\n- Debugging\n\n<example>\nContext: Committing changes\nuser: "Commit this fix for #42"\nassistant: "I will use git-workflow to commit with Ref #42."\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
+description: '**ALWAYS USE THIS AGENT** for commits, branches, PRs, and issues. NEVER run git commit/push directly.\n\n**When to use:**\n- ANY git commit, push, branch, or PR operation\n- Creating or linking GitHub issues\n\n<example>\nContext: User asks to commit\nuser: "commit this"\nassistant: "I will use git-workflow agent to create the commit."\n[Uses Task tool with git-workflow agent]\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
 model: opus
 ---
 
