@@ -175,6 +175,61 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
 - **`.claude/lib/common_hookify/`** - Shared Python module for hookify processing
 - **`.claude/rules/common-*.md`** - Shared Claude Code rules (synced from central config)
 - **`.claude/agents/common-*.md`** - Shared agents (synced from central config)
+- **`.claude/commands/common-*.md`** - Shared slash commands (synced from central config)
+
+### Slash Commands
+
+Commands are user-invocable workflows in `.claude/commands/`. Invoke with `/command-name` or `/command-name arguments`.
+
+| Command                   | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| `/pr-review <PR#>`        | Review a PR against project standards using Conventional Comments |
+| `/pr-summary`             | Generate PR summary for current branch changes                    |
+| `/security-check [files]` | Scan for secrets and sensitive data before commit                 |
+| `/debug <issue>`          | Systematic debugging workflow using scientific method             |
+
+**Command file format:**
+
+```yaml
+---
+name: command-name
+description: What the command does
+allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(gh:*)
+---
+# Title
+
+Instructions with $ARGUMENTS placeholder for user input.
+```
+
+**Note:** The `name` field defines the invocation name (e.g., `/pr-review`), while the filename uses `common-` prefix for sync (e.g., `common-pr-review.md`).
+
+### Structured Agents
+
+Agents are specialized assistants in `.claude/agents/`. They can be referenced directly or invoked by other agents.
+
+| Agent           | Model  | Description                                                                          |
+| --------------- | ------ | ------------------------------------------------------------------------------------ |
+| `code-reviewer` | opus   | Code quality review using [Conventional Comments](https://conventionalcomments.org/) |
+| `debugging`     | sonnet | Systematic debugging with scientific method                                          |
+| `git-workflow`  | sonnet | Git operations following project conventions                                         |
+
+**Agent file format:**
+
+```yaml
+---
+name: agent-name
+description: Brief description.\n\n**When to use:**\n- condition 1\n- condition 2\n\n**When NOT to use:**\n- condition\n\n<example>\nContext: ...\nassistant: ...\n</example>
+model: opus|sonnet
+---
+
+[Body content - actual agent instructions, checklists, output formats]
+```
+
+**Key points:**
+
+- `description` uses escaped `\n` newlines (NOT YAML multiline)
+- Activation context and examples go IN the description field
+- Body content is the actual agent instructions
 
 ### File Naming Convention
 
@@ -191,6 +246,8 @@ Files use a `common-` prefix to distinguish centrally-managed config from repo-s
 | `agents/*.md` (without `common-`)        | Repo-specific           | `agents/my-project-agent.md`            |
 | `rules/common-*.md`                      | Central (synced)        | `rules/common-code-style.md`            |
 | `rules/*.md` (without `common-`)         | Repo-specific           | `rules/my-project-rules.md`             |
+| `commands/common-*.md`                   | Central (synced)        | `commands/common-pr-review.md`          |
+| `commands/*.md` (without `common-`)      | Repo-specific           | `commands/my-deploy.md`                 |
 | `settings.json`                          | Central (always synced) | Always overwritten                      |
 
 **Important:** The sync script only manages files with the `common-` prefix. Repo-specific files (without the prefix) are never modified or deleted by sync.
@@ -202,6 +259,8 @@ Uses **bats-core** for testing. Run: `./test.sh`
 - `tests/security/` - File permissions, command blocks (bats + Python pathspec)
 - `tests/hooks/` - Hookify rules (data-driven YAML + actual hookify engine)
 - `tests/unit/` - Shell script validation (bats)
+- `tests/commands/` - Command file format validation (frontmatter, required fields)
+- `tests/agents/` - Agent file format validation (frontmatter, model field)
 
 **Hookify tests:** Add test cases to [tests/hooks/hookify_test_cases.yaml](tests/hooks/hookify_test_cases.yaml) with expected outcome (block/warn/allow). Tests use the shared hookify module from `.claude/lib/common_hookify/`.
 

@@ -35,7 +35,7 @@ git clone --depth 1 \
   "https://x-access-token:${GH_TOKEN}@github.com/${TARGET_REPO}.git" target
 
 # Ensure target has .claude directory structure
-mkdir -p target/.claude/agents target/.claude/rules target/.claude/hooks target/.claude/lib
+mkdir -p target/.claude/agents target/.claude/rules target/.claude/hooks target/.claude/lib target/.claude/commands
 
 # Sync files with "common-" prefix (our watermark for central config files)
 # This allows repos to have their own files without being overwritten
@@ -85,13 +85,29 @@ for f in config/.claude/hooks/common-*.py; do
 done
 
 # 6. Sync lib/common_* directories (entire directories)
+# Delete dirs that no longer exist in config
 for d in target/.claude/lib/common_*; do
   [ -d "$d" ] || continue
   basename="${d##*/}"
   [ -d "config/.claude/lib/$basename" ] || rm -rf "$d"
 done
+# Copy dirs from config (delete target first to remove stale files)
 for d in config/.claude/lib/common_*; do
-  [ -d "$d" ] && cp -r "$d" target/.claude/lib/
+  [ -d "$d" ] || continue
+  basename="${d##*/}"
+  rm -rf "target/.claude/lib/$basename"
+  cp -r "$d" target/.claude/lib/
+done
+
+# 7. Sync commands/common-*.md (delete removed, add new)
+# Commands use common- prefix in filename but can have different invocation name via 'name' field
+for f in target/.claude/commands/common-*.md; do
+  [ -e "$f" ] || continue
+  basename="${f##*/}"
+  [ -f "config/.claude/commands/$basename" ] || rm -f "$f"
+done
+for f in config/.claude/commands/common-*.md; do
+  [ -e "$f" ] && cp "$f" target/.claude/commands/
 done
 
 # Check if anything changed (including new untracked files)
