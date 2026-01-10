@@ -126,7 +126,7 @@ EOF
 # Check for PR template
 cat .github/PULL_REQUEST_TEMPLATE.md 2>/dev/null
 
-git push -u origin $(git branch --show-current)
+command git push -u origin $(git branch --show-current)
 
 gh pr create \
   --title "<type>(<scope>): <description>" \

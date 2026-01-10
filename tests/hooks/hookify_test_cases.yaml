@@ -373,39 +373,72 @@ test_cases:
     expect: allow
 
   # =============================================================================
-  # Git Commit Workflow (block-git-commit-unverified) - repo-specific
+  # Git Commit Workflow (common-block-git-commit-unverified) - repo-specific
   # =============================================================================
-  - name: "block-git-commit-unverified: git commit -m blocked"
+  - name: "common-block-git-commit-unverified: git commit -m blocked"
     tool: Bash
     command: "git commit -m 'test message'"
     expect: block
 
-  - name: "block-git-commit-unverified: git commit --amend blocked"
+  - name: "common-block-git-commit-unverified: git commit --amend blocked"
     tool: Bash
     command: "git commit --amend"
     expect: block
 
-  - name: "block-git-commit-unverified: chained git add && git commit blocked"
+  - name: "common-block-git-commit-unverified: chained git add && git commit blocked"
     tool: Bash
     command: "git add . && git commit -m 'test'"
     expect: block
 
-  - name: "block-git-commit-unverified: command git bypass works"
+  - name: "common-block-git-commit-unverified: command git bypass works"
     tool: Bash
     command: "command git commit -m 'test'"
     expect: allow
 
-  - name: "block-git-commit-unverified: chained command git bypass works"
+  - name: "common-block-git-commit-unverified: chained command git bypass works"
     tool: Bash
     command: "git add . && command git commit -m 'test'"
     expect: allow
 
-  - name: "block-git-commit-unverified: prose text not blocked"
+  - name: "common-block-git-commit-unverified: prose text not blocked"
     tool: Bash
     command: "gh issue create --title 'convert git commit warning to block'"
     expect: allow
 
-  - name: "block-git-commit-unverified: git commit mention without flag not blocked"
+  - name: "common-block-git-commit-unverified: git commit mention without flag not blocked"
     tool: Bash
     command: "echo 'the git commit command is used for committing'"
     expect: allow
+
+  # =============================================================================
+  # Git Push Workflow (common-block-git-push) - repo-specific
+  # =============================================================================
+  - name: "common-block-git-push: git push blocked"
+    tool: Bash
+    command: "git push"
+    expect: block
+
+  - name: "common-block-git-push: git push origin blocked"
+    tool: Bash
+    command: "git push origin main"
+    expect: block
+
+  - name: "common-block-git-push: git push -u blocked"
+    tool: Bash
+    command: "git push -u origin feature-branch"
+    expect: block
+
+  - name: "common-block-git-push: chained git push blocked"
+    tool: Bash
+    command: "git add . && git commit -m 'test' && git push"
+    expect: block
+
+  - name: "common-block-git-push: command git push warns (post-push guidance)"
+    tool: Bash
+    command: "command git push"
+    expect: warn
+
+  - name: "common-block-git-push: command git push -u warns (post-push guidance)"
+    tool: Bash
+    command: "command git push -u origin main"
+    expect: warn

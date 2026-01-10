@@ -1,5 +1,5 @@
 ---
-name: block-git-commit-unverified
+name: common-block-git-commit-unverified
 enabled: false
 event: bash
 pattern: (^|[;&|]\s*)git\s+commit\s+-
