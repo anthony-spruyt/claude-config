@@ -86,4 +86,4 @@ Examples:
 
 - Found existing: `Found existing issue: #123 - <title>`
 - Created new: `Created issue: #123 - <title>`
-- **Next:** Implement the work, then commit with **git-workflow** for #123
+- **Next:** Implement the work, then **qa-workflow** if available followed by commit with **git-workflow** for #123

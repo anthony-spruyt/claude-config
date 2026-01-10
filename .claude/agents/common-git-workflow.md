@@ -209,5 +209,5 @@ Return structured results for handoff to next agent:
 - **Branch:** <branch-name>
 - **Commit:** <sha> - <message>
 - **PR:** #<number> (created|updated) - <url>
-- **Next:** Use **pr-review** and/or **qa-workflow** if available, then **merge-workflow** when approved
+- **Next:** Use **pr-review** if available, then **merge-workflow** when approved
 ```
