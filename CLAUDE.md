@@ -199,11 +199,36 @@ Instructions with $ARGUMENTS placeholder for user input.
 
 Agents are specialized assistants in `.claude/agents/`. They can be referenced directly or invoked by other agents.
 
-| Agent           | Model  | Description                                                                          |
-| --------------- | ------ | ------------------------------------------------------------------------------------ |
-| `code-reviewer` | opus   | Code quality review using [Conventional Comments](https://conventionalcomments.org/) |
-| `debugging`     | sonnet | Systematic debugging with scientific method                                          |
-| `git-workflow`  | sonnet | Git operations following project conventions                                         |
+| Agent            | Model  | Description                                                                          |
+| ---------------- | ------ | ------------------------------------------------------------------------------------ |
+| `code-reviewer`  | opus   | Code quality review using [Conventional Comments](https://conventionalcomments.org/) |
+| `debugging`      | sonnet | Systematic debugging with scientific method                                          |
+| `git-workflow`   | sonnet | Git operations following project conventions                                         |
+| `issue-workflow` | opus   | Creates/finds GitHub issues (does NOT implement work)                                |
+| `merge-workflow` | sonnet | Merges PRs after checking approval, CI, conflicts                                    |
+
+#### Agent Tool Restrictions
+
+Agents can be restricted to specific tools using `allowed-tools` in frontmatter:
+
+```yaml
+---
+name: issue-workflow
+model: opus
+allowed-tools: Bash(gh:*), Bash(ls:*), Bash(cat:*), Read
+---
+```
+
+**Why this matters:** Without restrictions, agents have access to ALL tools and may perform unintended actions (e.g., deleting files when asked to "remove" something instead of creating an issue for removal).
+
+#### Reloading Agent Changes
+
+Agent `.md` file changes require a reload to take effect:
+
+1. **During session:** Use `/reload` command (if available in your CLI version)
+2. **Otherwise:** Exit and restart the session
+
+Text instructions (like "NEVER delete files") are often ignored by agents. Use `allowed-tools` restrictions for enforcement.
 
 ### File Naming Convention
 

@@ -50,12 +50,9 @@ body:
       label: Affected Area
       description: What part of the cluster does this affect?
       options:
-        - Apps (cluster/apps/)
-        - Flux/GitOps (cluster/flux/)
-        - Infrastructure (Talos, networking, storage)
-        - Monitoring/Observability
-        - Security (network policies, auth)
-        - Tooling (.taskfiles/, scripts)
+        - Claude Config (.claude/)
+        - Claude Agents (.claude/agents)
+        - Claude Rules (.claude/rules)
         - CI/CD (.github/)
         - Other
     validations:
