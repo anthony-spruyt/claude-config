@@ -61,7 +61,7 @@ Report the review outcome for workflow handoff.
 - **PR:** #<number> - <title>
 - **Review:** Posted to GitHub
 - **Verdict:** APPROVED | CHANGES_REQUESTED | COMMENT
-- **Next:** Use **merge-workflow** when approved
+- **Next:** If APPROVED → **merge-workflow**; if CHANGES_REQUESTED → **review-responder**
 ```
 
 ### Error
