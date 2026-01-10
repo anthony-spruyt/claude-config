@@ -9,11 +9,12 @@ import sys
 import os
 import argparse
 
-# Add helpers directory to path for hookify import
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add .claude/lib to path for shared hookify module
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(REPO_ROOT, ".claude", "lib"))
 
 import yaml
-from hookify import load_rules, RuleEngine
+from common_hookify import load_rules, RuleEngine
 
 
 def get_result_type(result: dict) -> str:
@@ -85,8 +86,8 @@ def run_tests(config_path: str, rules_dir: str, verbose: bool = False) -> list:
         # Determine event type for rule loading
         event = "bash" if tool == "Bash" else "file"
 
-        # Load rules and evaluate
-        rules = load_rules(event=event, rules_dir=rules_dir)
+        # Load rules and evaluate (include disabled rules for testing)
+        rules = load_rules(event=event, rules_dir=rules_dir, include_disabled=True)
         result = engine.evaluate_rules(rules, input_data)
 
         # Check expectation

@@ -1,6 +1,6 @@
 ---
 name: block-git-commit-unverified
-enabled: true
+enabled: false
 event: bash
 pattern: (^|[;&|]\s*)git\s+commit\s+-
 action: block

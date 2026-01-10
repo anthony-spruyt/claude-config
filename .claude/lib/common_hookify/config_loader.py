@@ -42,6 +42,7 @@ class Rule:
     action: str = "warn"  # "warn" or "block"
     tool_matcher: Optional[str] = None  # Override tool matching
     message: str = ""  # Message body from markdown
+    bridge_enabled: bool = True  # If true + enabled=false, bridge handles this rule
 
     @classmethod
     def from_dict(cls, frontmatter: Dict[str, Any], message: str) -> 'Rule':
@@ -82,7 +83,8 @@ class Rule:
             conditions=conditions,
             action=frontmatter.get('action', 'warn'),
             tool_matcher=frontmatter.get('tool_matcher'),
-            message=message.strip()
+            message=message.strip(),
+            bridge_enabled=frontmatter.get('bridgeEnabled', True)  # Default true for backwards compat
         )
 
 
@@ -197,15 +199,17 @@ def extract_frontmatter(content: str) -> tuple[Dict[str, Any], str]:
     return frontmatter, message
 
 
-def load_rules(event: Optional[str] = None, rules_dir: Optional[str] = None) -> List[Rule]:
+def load_rules(event: Optional[str] = None, rules_dir: Optional[str] = None,
+               include_disabled: bool = False) -> List[Rule]:
     """Load all hookify rules from .claude directory.
 
     Args:
         event: Optional event filter ("bash", "file", "stop", etc.)
         rules_dir: Optional directory containing rules (defaults to .claude/)
+        include_disabled: If True, also include disabled rules (for testing)
 
     Returns:
-        List of enabled Rule objects matching the event.
+        List of Rule objects matching the event (enabled only, unless include_disabled).
     """
     rules = []
 
@@ -228,8 +232,8 @@ def load_rules(event: Optional[str] = None, rules_dir: Optional[str] = None) -> 
                 if rule.event != 'all' and rule.event != event:
                     continue
 
-            # Only include enabled rules
-            if rule.enabled:
+            # Include disabled rules only if explicitly requested
+            if rule.enabled or include_disabled:
                 rules.append(rule)
 
         except (IOError, OSError, PermissionError) as e:
