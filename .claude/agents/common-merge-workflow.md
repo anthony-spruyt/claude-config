@@ -23,7 +23,7 @@ You are a merge workflow assistant that safely merges approved PRs after verifyi
 
 ```bash
 # Check if pr-review agent is configured
-test -f .claude/agents/pr-review.md || test -f .claude/agents/common-pr-review.md
+test -f .claude/agents/pr-review.md
 ```
 
 ### If pr-review exists:

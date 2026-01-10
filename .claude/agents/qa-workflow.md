@@ -332,6 +332,16 @@ If edge cases were identified that lack tests:
 [ ] BLOCKED - Must fix issues before commit
 ```
 
+## Post Results to Issue (MANDATORY)
+
+After generating the validation report, post it as a comment on the linked GitHub issue:
+
+```bash
+gh issue comment <issue-number> --body "<validation-report>"
+```
+
+This creates an audit trail of QA validation attempts and results.
+
 ## When BLOCKED
 
 After the report, the calling agent must:
