@@ -522,6 +522,11 @@ test_cases:
     command: "git checkout main"
     expect: allow
 
+  - name: "block-branch-without-issue: git branch --show-current allowed"
+    tool: Bash
+    command: "git branch --show-current"
+    expect: allow
+
   # =============================================================================
   # PR Without Issue (block-pr-without-issue)
   # =============================================================================
