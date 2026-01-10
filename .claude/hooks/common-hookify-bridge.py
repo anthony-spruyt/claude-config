@@ -94,11 +94,11 @@ def main():
         print(message, file=sys.stderr)
         sys.exit(2)
 
-    # If warning, output message to stderr and exit 0
-    # This allows the command but ensures Claude receives the warning
+    # If warning, output message to stdout and exit 0
+    # Exit 0 + stdout = message included in transcript (shown to Claude)
     if result.get("systemMessage") and not result.get("hookSpecificOutput"):
         message = result.get("systemMessage")
-        print(message, file=sys.stderr)
+        print(message)  # stdout, not stderr
         sys.exit(0)
 
     sys.exit(0)
