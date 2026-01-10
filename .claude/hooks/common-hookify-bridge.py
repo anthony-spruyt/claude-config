@@ -95,21 +95,28 @@ def main():
     is_block = result.get("hookSpecificOutput", {}).get("permissionDecision") == "deny"
     is_warn = result.get("systemMessage") and not result.get("hookSpecificOutput")
 
+    def show_block_to_user(message: str):
+        """Show block message to user - try /dev/tty (CLI), fall back to stdout (extension)."""
+        try:
+            with open("/dev/tty", "w") as tty:
+                tty.write(f"\n🚫 BLOCKED: {message}\n")
+        except (OSError, IOError):
+            print(f"🚫 BLOCKED: {message}")  # stdout fallback for extension
+
     if POST_MODE:
-        # PostToolUse: only handle warnings (command already ran)
+        # PostToolUse: warnings for Claude only (user can see via ctrl+o if curious)
         if is_warn:
             message = result.get("systemMessage")
-            # Try stderr for PostToolUse - docs say exit 2 stderr goes to Claude
-            print(message, file=sys.stderr)
+            print(message, file=sys.stderr)  # stderr for Claude
             sys.exit(2)
         sys.exit(0)
     else:
-        # PreToolUse: only handle blocks (warnings handled by PostToolUse)
+        # PreToolUse: blocks shown to both user and Claude
         if is_block:
             message = result.get("systemMessage", "Blocked by hookify rule")
-            print(message, file=sys.stderr)
+            show_block_to_user(message)
+            print(message, file=sys.stderr)  # stderr for Claude
             sys.exit(2)
-        # Don't output warnings in PreToolUse - let PostToolUse handle them
         sys.exit(0)
 
 
