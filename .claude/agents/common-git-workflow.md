@@ -105,20 +105,29 @@ EOF
 
 ### Creating a Commit
 
-**BEFORE committing, you MUST have an issue number:**
+**BEFORE committing, you MUST:**
 
-1. Was issue # provided? → Use it
-2. No issue provided? → Search: `gh issue list --search "keywords"`
-3. No existing issue? → Create one: `gh issue create --title "<type>(<scope>): description"`
+1. **Check branch** - If on main/master, create a feature branch first
+2. **Have an issue number:**
+   - Was issue # provided? → Use it
+   - No issue provided? → Search: `gh issue list --search "keywords"`
+   - No existing issue? → Create one: `gh issue create --title "<type>(<scope>): description"`
 
-**DO NOT PROCEED without an issue number.**
+**DO NOT PROCEED without a feature branch and issue number.**
 
 ```bash
+# 1. Check branch - create feature branch if on main/master
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+  git checkout -b <type>/<short-description>
+fi
+
+# 2. Stage and review changes
 git status
 git add <files>
 git diff --cached
 
-# Use 'command git' to bypass the commit verification hook
+# 3. Commit with 'command git' to bypass verification hook
 command git commit -m "$(cat <<'EOF'
 <type>(<scope>): <description>
 
@@ -127,6 +136,9 @@ Ref #<issue-number>
 Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
+
+# 4. Auto-push to origin
+command git push -u origin $(git branch --show-current)
 ```
 
 ### Creating a Pull Request
