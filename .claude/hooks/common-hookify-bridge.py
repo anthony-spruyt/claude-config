@@ -94,11 +94,17 @@ def main():
         print(message, file=sys.stderr)
         sys.exit(2)
 
-    # If warning, output message to stdout and exit 0
-    # Exit 0 + stdout = message included in transcript (shown to Claude)
+    # If warning, output proper JSON format with systemMessage
+    # Per docs: systemMessage provides explanation/feedback to Claude
     if result.get("systemMessage") and not result.get("hookSpecificOutput"):
         message = result.get("systemMessage")
-        print(message)  # stdout, not stderr
+        output = {
+            "hookSpecificOutput": {
+                "permissionDecision": "allow"
+            },
+            "systemMessage": message
+        }
+        print(json.dumps(output))
         sys.exit(0)
 
     sys.exit(0)
