@@ -94,19 +94,11 @@ def main():
         print(message, file=sys.stderr)
         sys.exit(2)
 
-    # If warning, output JSON with systemMessage and explicit allow
-    # Note: systemMessage may only show to user, not Claude (limitation of PreToolUse)
+    # If warning, output message to stderr and exit 0
+    # This allows the command but ensures Claude receives the warning
     if result.get("systemMessage") and not result.get("hookSpecificOutput"):
         message = result.get("systemMessage")
-        output = {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "allow",
-                "permissionDecisionReason": message
-            },
-            "systemMessage": message
-        }
-        print(json.dumps(output))
+        print(message, file=sys.stderr)
         sys.exit(0)
 
     sys.exit(0)
