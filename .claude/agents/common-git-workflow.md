@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: 'Handles commits, branches, PRs, and issues. Pass issue number if known (e.g., "for #123").\n\n**When to use:**\n- Creating commits, branches, PRs, or issues\n\n**When NOT to use:**\n- Code review (use code-reviewer)\n- Debugging\n\n<example>\nContext: Committing changes\nuser: "Commit this fix for #42"\nassistant: "I will use git-workflow to commit with Ref #42."\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
+description: 'Handles commits, branches, PRs, and issues. **Pass issue number if known** (e.g., "for #123").\n\n**When to use:**\n- Creating commits, branches, PRs, or issues\n\n<example>\nContext: Committing changes\nuser: "Commit this fix for #42"\nassistant: "I will use git-workflow to commit with Ref #42."\n</example>\n\n<example>\nContext: Creating a PR\nuser: "Create a PR for this feature"\nassistant: "I will use git-workflow to create the PR."\n</example>'
 model: opus
 ---
 
@@ -105,20 +105,30 @@ EOF
 
 ### Creating a Commit
 
-**BEFORE committing, you MUST have an issue number:**
+**BEFORE committing, you MUST:**
 
-1. Was issue # provided? → Use it
-2. No issue provided? → Search: `gh issue list --search "keywords"`
-3. No existing issue? → Create one: `gh issue create --title "<type>(<scope>): description"`
+1. **Check branch** - REFUSE to commit on main/master. Create a feature branch first.
+2. **Have an issue number:**
+   - Was issue # provided? → Use it
+   - No issue provided? → Search: `gh issue list --search "keywords"`
+   - No existing issue? → Create one: `gh issue create --title "<type>(<scope>): description"`
 
-**DO NOT PROCEED without an issue number.**
+**DO NOT PROCEED without a feature branch and issue number.**
 
 ```bash
+# 1. REFUSE if on main/master - create feature branch first
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+  echo "ERROR: Cannot commit on $BRANCH. Creating feature branch..."
+  git checkout -b <type>/<short-description>
+fi
+
+# 2. Stage and review changes
 git status
 git add <files>
 git diff --cached
 
-# Use 'command git' to bypass the commit verification hook
+# 3. Commit with 'command git' to bypass verification hook
 command git commit -m "$(cat <<'EOF'
 <type>(<scope>): <description>
 
@@ -127,6 +137,12 @@ Ref #<issue-number>
 Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
+
+# 4. Auto-push to feature branch (NEVER to main/master)
+BRANCH=$(git branch --show-current)
+if [[ "$BRANCH" != "main" && "$BRANCH" != "master" ]]; then
+  command git push -u origin "$BRANCH"
+fi
 ```
 
 ### Creating a Pull Request
@@ -161,10 +177,12 @@ EOF
 
 ## Important Rules
 
-1. **Never push to main directly** - Always use branches and PRs
-2. **Never force push to shared branches** - Use `--force-with-lease`
-3. **Never commit secrets** - Check for API keys, passwords, tokens
-4. **Keep commits atomic** - One logical change per commit
+1. **REFUSE to push to main/master** - Even if asked. Always use feature branches and PRs.
+2. **REFUSE to merge to main/master** - Even if asked. Use `gh pr merge` after PR approval.
+3. **REFUSE to use `git -C`** - Breaks bash whitelist patterns. Run from working directory.
+4. **Never force push to shared branches** - Use `--force-with-lease` if absolutely needed.
+5. **Never commit secrets** - Check for API keys, passwords, tokens.
+6. **Keep commits atomic** - One logical change per commit.
 
 ## Output
 
