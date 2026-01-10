@@ -31,8 +31,9 @@ test -f .claude/agents/pr-review.md
 1. **Invoke pr-review** using Task tool with the PR number
 2. **Wait for result** - pr-review returns APPROVED, CHANGES_REQUESTED, or COMMENT
 3. **If CHANGES_REQUESTED:** Stop immediately. Return the pr-review output to the caller. Do NOT proceed with merge.
-4. **If APPROVED:** Continue with pre-merge checks below.
-5. **If COMMENT:** Treat as APPROVED (informational only).
+4. **If APPROVED or COMMENT:** **DO NOT STOP HERE.** You MUST continue with pre-merge checks and merge process below. The pr-review is just step 1 of your job.
+
+**CRITICAL:** After pr-review returns APPROVED, you are NOT done. You MUST execute the pre-merge checks AND the merge process. Do not return until the PR is merged or blocked by a pre-merge check.
 
 ### If pr-review does NOT exist:
 
