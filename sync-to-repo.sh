@@ -132,7 +132,7 @@ git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
 
 git checkout -b "$BRANCH_NAME"
 
-git commit -m "chore(config): update Claude config
+git commit -S -m "chore(config): update Claude config
 
 Updated configuration from ${CONFIG_REPO}."
 
