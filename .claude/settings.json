@@ -129,6 +129,15 @@
             "command": "python3 .claude/hooks/common-hookify-bridge.py"
           }
         ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/common-hookify-bridge.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [

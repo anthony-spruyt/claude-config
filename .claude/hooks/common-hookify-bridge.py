@@ -72,21 +72,25 @@ def main():
         sys.exit(0)
 
     # Build hook input format expected by hookify
+    tool_name = input_data.get("tool_name", "Bash")
     hook_input = {
         "hook_event_name": "PreToolUse",
-        "tool_name": input_data.get("tool_name", "Bash"),
+        "tool_name": tool_name,
         "tool_input": input_data.get("tool_input", {}),
     }
+
+    # Determine event type based on tool
+    event = "file" if tool_name == "Read" else "bash"
 
     # Load rules from .claude directory
     claude_dir = CLAUDE_DIR
 
     if DISABLED_ONLY:
         # Only load disabled rules (hookify plugin handles enabled ones)
-        rules = load_bridge_rules(claude_dir, event="bash")
+        rules = load_bridge_rules(claude_dir, event=event)
     else:
         # Load all enabled rules (hookify plugin should be disabled)
-        rules = load_rules(event="bash", rules_dir=str(claude_dir))
+        rules = load_rules(event=event, rules_dir=str(claude_dir))
 
     # Evaluate rules
     engine = RuleEngine()
