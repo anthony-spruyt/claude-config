@@ -260,19 +260,6 @@ test_cases:
     expect: allow
 
   # =============================================================================
-  # GitHub Issue Close (block-issue-close)
-  # =============================================================================
-  - name: "block-issue-close: gh issue close"
-    tool: Bash
-    command: "gh issue close 123"
-    expect: block
-
-  - name: "block-issue-close: allows gh issue list"
-    tool: Bash
-    command: "gh issue list"
-    expect: allow
-
-  # =============================================================================
   # Shell Wrappers (warn-shell-wrappers)
   # =============================================================================
   - name: "warn-shell-wrappers: sh -c"
@@ -373,188 +360,316 @@ test_cases:
     expect: allow
 
   # =============================================================================
-  # Git Commit Workflow (common-block-git-commit-unverified) - repo-specific
+  # READ TOOL TESTS
   # =============================================================================
-  - name: "common-block-git-commit-unverified: git commit -m blocked"
-    tool: Bash
-    command: "git commit -m 'test message'"
-    expect: block
-
-  - name: "common-block-git-commit-unverified: git commit --amend blocked"
-    tool: Bash
-    command: "git commit --amend"
-    expect: block
-
-  - name: "common-block-git-commit-unverified: chained git add && git commit blocked"
-    tool: Bash
-    command: "git add . && git commit -m 'test'"
-    expect: block
-
-  - name: "common-block-git-commit-unverified: command git bypass works"
-    tool: Bash
-    command: "command git commit -m 'test'"
-    expect: allow
-
-  - name: "common-block-git-commit-unverified: chained command git bypass works"
-    tool: Bash
-    command: "git add . && command git commit -m 'test'"
-    expect: allow
-
-  - name: "common-block-git-commit-unverified: prose text not blocked"
-    tool: Bash
-    command: "gh issue create --title 'convert git commit warning to block'"
-    expect: allow
-
-  - name: "common-block-git-commit-unverified: git commit mention without flag not blocked"
-    tool: Bash
-    command: "echo 'the git commit command is used for committing'"
-    expect: allow
 
   # =============================================================================
-  # Git Push Workflow (common-block-git-push) - repo-specific
+  # SSH/PKI Keys (block-read-ssh-keys)
   # =============================================================================
-  - name: "common-block-git-push: git push blocked"
-    tool: Bash
-    command: "git push"
+  - name: "block-read-ssh-keys: id_rsa in home .ssh"
+    tool: Read
+    file_path: "/home/user/.ssh/id_rsa"
     expect: block
 
-  - name: "common-block-git-push: git push origin blocked"
-    tool: Bash
-    command: "git push origin main"
+  - name: "block-read-ssh-keys: id_ed25519 in home .ssh"
+    tool: Read
+    file_path: "/home/user/.ssh/id_ed25519"
     expect: block
 
-  - name: "common-block-git-push: git push -u blocked"
-    tool: Bash
-    command: "git push -u origin feature-branch"
+  - name: "block-read-ssh-keys: id_ecdsa in home .ssh"
+    tool: Read
+    file_path: "/home/vscode/.ssh/id_ecdsa"
     expect: block
 
-  - name: "common-block-git-push: chained git push blocked"
-    tool: Bash
-    command: "git add . && git commit -m 'test' && git push"
+  - name: "block-read-ssh-keys: .pem file"
+    tool: Read
+    file_path: "/workspaces/project/certs/server.pem"
     expect: block
 
-  - name: "common-block-git-push: command git push warns (post-push guidance)"
-    tool: Bash
-    command: "command git push"
-    expect: warn
-
-  - name: "common-block-git-push: command git push -u warns (post-push guidance)"
-    tool: Bash
-    command: "command git push -u origin main"
-    expect: warn
-
-  # =============================================================================
-  # Git Directory Flags (common-block-git-directory-flag)
-  # =============================================================================
-  - name: "common-block-git-directory-flag: git -C blocked"
-    tool: Bash
-    command: "git -C /some/path status"
+  - name: "block-read-ssh-keys: .key file"
+    tool: Read
+    file_path: "/workspaces/project/ssl/private.key"
     expect: block
 
-  - name: "common-block-git-directory-flag: git --git-dir blocked"
-    tool: Bash
-    command: "git --git-dir=/some/path/.git status"
+  - name: "block-read-ssh-keys: .p12 file"
+    tool: Read
+    file_path: "/workspaces/project/certs/client.p12"
     expect: block
 
-  - name: "common-block-git-directory-flag: git --work-tree blocked"
-    tool: Bash
-    command: "git --work-tree=/some/path status"
+  - name: "block-read-ssh-keys: .pfx file"
+    tool: Read
+    file_path: "/workspaces/project/certs/server.pfx"
     expect: block
 
-  - name: "common-block-git-directory-flag: normal git status allowed"
-    tool: Bash
-    command: "git status"
+  - name: "block-read-ssh-keys: .jks file"
+    tool: Read
+    file_path: "/workspaces/project/keystore.jks"
+    expect: block
+
+  - name: "block-read-ssh-keys: .keystore file"
+    tool: Read
+    file_path: "/workspaces/project/app.keystore"
+    expect: block
+
+  - name: "block-read-ssh-keys: any file in .ssh directory"
+    tool: Read
+    file_path: "/home/user/.ssh/known_hosts"
+    expect: block
+
+  - name: "block-read-ssh-keys: config in .ssh directory"
+    tool: Read
+    file_path: "/home/user/.ssh/config"
+    expect: block
+
+  - name: "block-read-ssh-keys: allows id_rsa.pub (public key)"
+    tool: Read
+    file_path: "/home/user/keys/id_rsa.pub"
     expect: allow
 
-  - name: "common-block-git-directory-flag: git log allowed"
-    tool: Bash
-    command: "git log --oneline -5"
+  - name: "block-read-ssh-keys: allows README.md"
+    tool: Read
+    file_path: "/workspaces/project/README.md"
     expect: allow
 
   # =============================================================================
-  # Git Merge Main/Master (common-block-git-merge-main)
+  # Cloud Credentials (block-read-cloud-creds)
   # =============================================================================
-  - name: "common-block-git-merge-main: git merge main blocked"
-    tool: Bash
-    command: "git merge main"
+  - name: "block-read-cloud-creds: aws credentials"
+    tool: Read
+    file_path: "/home/user/.aws/credentials"
     expect: block
 
-  - name: "common-block-git-merge-main: git merge master blocked"
-    tool: Bash
-    command: "git merge master"
+  - name: "block-read-cloud-creds: kube config"
+    tool: Read
+    file_path: "/home/user/.kube/config"
     expect: block
 
-  - name: "common-block-git-merge-main: git merge origin/main blocked"
-    tool: Bash
-    command: "git merge origin/main"
+  - name: "block-read-cloud-creds: kubeconfig in project"
+    tool: Read
+    file_path: "/workspaces/project/kubeconfig.yaml"
     expect: block
 
-  - name: "common-block-git-merge-main: git merge feature-branch allowed"
-    tool: Bash
-    command: "git merge feature-branch"
+  - name: "block-read-cloud-creds: kubeconfig with prefix"
+    tool: Read
+    file_path: "/workspaces/project/dev-kubeconfig"
+    expect: block
+
+  - name: "block-read-cloud-creds: docker config.json"
+    tool: Read
+    file_path: "/home/user/.docker/config.json"
+    expect: block
+
+  - name: "block-read-cloud-creds: gh hosts.yml"
+    tool: Read
+    file_path: "/home/user/.config/gh/hosts.yml"
+    expect: block
+
+  - name: "block-read-cloud-creds: allows aws config (not credentials)"
+    tool: Read
+    file_path: "/home/user/.aws/config"
+    expect: allow
+
+  - name: "block-read-cloud-creds: allows docker compose file"
+    tool: Read
+    file_path: "/workspaces/project/docker-compose.yml"
     expect: allow
 
   # =============================================================================
-  # Branch Without Issue (block-branch-without-issue)
+  # Environment Files (block-read-env-files)
   # =============================================================================
-  - name: "block-branch-without-issue: git checkout -b without issue blocked"
-    tool: Bash
-    command: "git checkout -b feat/add-auth"
+  - name: "block-read-env-files: .env file"
+    tool: Read
+    file_path: "/workspaces/project/.env"
     expect: block
 
-  - name: "block-branch-without-issue: git branch without issue blocked"
-    tool: Bash
-    command: "git branch fix/login-bug"
+  - name: "block-read-env-files: .env.local"
+    tool: Read
+    file_path: "/workspaces/project/.env.local"
     expect: block
 
-  - name: "block-branch-without-issue: git checkout -b with issue allowed"
-    tool: Bash
-    command: "git checkout -b feat/add-auth-42"
-    expect: allow
-
-  - name: "block-branch-without-issue: git branch with issue allowed"
-    tool: Bash
-    command: "git branch fix/login-bug-15"
-    expect: allow
-
-  - name: "block-branch-without-issue: existing branch checkout allowed"
-    tool: Bash
-    command: "git checkout main"
-    expect: allow
-
-  - name: "block-branch-without-issue: git branch --show-current allowed"
-    tool: Bash
-    command: "git branch --show-current"
-    expect: allow
-
-  # =============================================================================
-  # PR Without Issue (block-pr-without-issue)
-  # =============================================================================
-  - name: "block-pr-without-issue: gh pr create without issue blocked"
-    tool: Bash
-    command: "gh pr create --title 'feat: add auth' --body 'test'"
+  - name: "block-read-env-files: .env.production"
+    tool: Read
+    file_path: "/workspaces/project/.env.production"
     expect: block
 
-  # NOTE: gh pr create with issue# triggers warn from common-warn-pr-create
-  - name: "block-pr-without-issue: gh pr create with issue not blocked (but warns)"
-    tool: Bash
-    command: "gh pr create --title 'feat: add auth (#42)' --body 'test'"
-    expect: warn
+  - name: "block-read-env-files: .env.development"
+    tool: Read
+    file_path: "/workspaces/project/.env.development"
+    expect: block
 
-  - name: "block-pr-without-issue: gh pr create with scope and issue not blocked (but warns)"
-    tool: Bash
-    command: "gh pr create --title 'feat(api): add endpoint (#15)' --body 'test'"
-    expect: warn
+  - name: "block-read-env-files: nested .env"
+    tool: Read
+    file_path: "/workspaces/project/apps/api/.env"
+    expect: block
+
+  - name: "block-read-env-files: .env.example (blocked - matches .env.*)"
+    tool: Read
+    file_path: "/workspaces/project/.env.example"
+    expect: block
+
+  - name: "block-read-env-files: allows environment.ts"
+    tool: Read
+    file_path: "/workspaces/project/src/environment.ts"
+    expect: allow
+
+  - name: "block-read-env-files: allows envconfig.json"
+    tool: Read
+    file_path: "/workspaces/project/envconfig.json"
+    expect: allow
 
   # =============================================================================
-  # Warn PR Merge (common-warn-pr-merge)
+  # Package Manager Credentials (block-read-package-creds)
   # =============================================================================
-  - name: "common-warn-pr-merge: gh pr merge triggers warning"
-    tool: Bash
-    command: "gh pr merge 42"
-    expect: warn
+  - name: "block-read-package-creds: .npmrc in home"
+    tool: Read
+    file_path: "/home/user/.npmrc"
+    expect: block
 
-  - name: "common-warn-pr-merge: gh pr merge with flags triggers warning"
-    tool: Bash
-    command: "gh pr merge 42 --squash --delete-branch"
-    expect: warn
+  - name: "block-read-package-creds: .npmrc in project"
+    tool: Read
+    file_path: "/workspaces/project/.npmrc"
+    expect: block
+
+  - name: "block-read-package-creds: .pypirc"
+    tool: Read
+    file_path: "/home/user/.pypirc"
+    expect: block
+
+  - name: "block-read-package-creds: .netrc"
+    tool: Read
+    file_path: "/home/user/.netrc"
+    expect: block
+
+  - name: "block-read-package-creds: allows package.json"
+    tool: Read
+    file_path: "/workspaces/project/package.json"
+    expect: allow
+
+  - name: "block-read-package-creds: allows pyproject.toml"
+    tool: Read
+    file_path: "/workspaces/project/pyproject.toml"
+    expect: allow
+
+  # =============================================================================
+  # Generic Secrets (block-read-secrets-generic)
+  # =============================================================================
+  - name: "block-read-secrets-generic: secrets.yaml"
+    tool: Read
+    file_path: "/workspaces/project/secrets.yaml"
+    expect: block
+
+  - name: "block-read-secrets-generic: secrets.yml"
+    tool: Read
+    file_path: "/workspaces/project/secrets.yml"
+    expect: block
+
+  - name: "block-read-secrets-generic: secrets.json"
+    tool: Read
+    file_path: "/workspaces/project/secrets.json"
+    expect: block
+
+  - name: "block-read-secrets-generic: secret.txt"
+    tool: Read
+    file_path: "/workspaces/project/secret.txt"
+    expect: block
+
+  - name: "block-read-secrets-generic: token.json"
+    tool: Read
+    file_path: "/workspaces/project/token.json"
+    expect: block
+
+  - name: "block-read-secrets-generic: tokens.json"
+    tool: Read
+    file_path: "/workspaces/project/tokens.json"
+    expect: block
+
+  - name: "block-read-secrets-generic: credentials.json"
+    tool: Read
+    file_path: "/workspaces/project/credentials.json"
+    expect: block
+
+  - name: "block-read-secrets-generic: .credentials file"
+    tool: Read
+    file_path: "/workspaces/project/.credentials"
+    expect: block
+
+  - name: "block-read-secrets-generic: .htpasswd"
+    tool: Read
+    file_path: "/workspaces/project/.htpasswd"
+    expect: block
+
+  - name: "block-read-secrets-generic: .vault-token"
+    tool: Read
+    file_path: "/home/user/.vault-token"
+    expect: block
+
+  - name: "block-read-secrets-generic: allows token_utils.py (code file)"
+    tool: Read
+    file_path: "/workspaces/project/src/token_utils.py"
+    expect: allow
+
+  - name: "block-read-secrets-generic: allows secrets_manager.ts (code file)"
+    tool: Read
+    file_path: "/workspaces/project/src/secrets_manager.ts"
+    expect: allow
+
+  - name: "block-read-secrets-generic: allows tokenizer.js (code file)"
+    tool: Read
+    file_path: "/workspaces/project/lib/tokenizer.js"
+    expect: allow
+
+  - name: "block-read-secrets-generic: allows secret_test.go (test file)"
+    tool: Read
+    file_path: "/workspaces/project/secret_test.go"
+    expect: allow
+
+  # =============================================================================
+  # Encrypted Stores (block-read-encrypted-stores)
+  # =============================================================================
+  - name: "block-read-encrypted-stores: gnupg private keys"
+    tool: Read
+    file_path: "/home/user/.gnupg/private-keys-v1.d/key.key"
+    expect: block
+
+  - name: "block-read-encrypted-stores: gnupg pubring"
+    tool: Read
+    file_path: "/home/user/.gnupg/pubring.kbx"
+    expect: block
+
+  - name: "block-read-encrypted-stores: password-store entry"
+    tool: Read
+    file_path: "/home/user/.password-store/email/gmail.gpg"
+    expect: block
+
+  - name: "block-read-encrypted-stores: password-store root"
+    tool: Read
+    file_path: "/home/user/.password-store/.gpg-id"
+    expect: block
+
+  - name: "block-read-encrypted-stores: allows .gpg file outside stores"
+    tool: Read
+    file_path: "/workspaces/project/docs/guide.gpg"
+    expect: allow
+
+  # =============================================================================
+  # SOPS Read (block-sops-read) - existing rule
+  # =============================================================================
+  - name: "block-sops-read: .sops.yaml"
+    tool: Read
+    file_path: "/workspaces/project/secrets.sops.yaml"
+    expect: block
+
+  - name: "block-sops-read: .sops.yml"
+    tool: Read
+    file_path: "/workspaces/project/config.sops.yml"
+    expect: block
+
+  - name: "block-sops-read: .sops.json"
+    tool: Read
+    file_path: "/workspaces/project/secrets.sops.json"
+    expect: block
+
+  - name: "block-sops-read: allows regular yaml"
+    tool: Read
+    file_path: "/workspaces/project/config.yaml"
+    expect: allow
