@@ -27,7 +27,8 @@
         "esbenp.prettier-vscode",
         "anthropic.claude-code",
         "jetmartin.bats",
-        "bierner.markdown-mermaid"
+        "bierner.markdown-mermaid",
+        "github.vscode-github-actions"
       ]
     }
   }
