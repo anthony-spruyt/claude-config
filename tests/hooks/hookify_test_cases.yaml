@@ -711,3 +711,31 @@ test_cases:
     tool: Bash
     command: 'git add . && git commit -m "message"'
     expect: warn
+
+  # =============================================================================
+  # GH PR Automerge Warning (warn-gh-pr-automerge)
+  # =============================================================================
+  - name: "warn-gh-pr-automerge: gh pr create with title"
+    tool: Bash
+    command: "gh pr create --title 'feat: add feature' --body 'description'"
+    expect: warn
+
+  - name: "warn-gh-pr-automerge: gh pr create draft"
+    tool: Bash
+    command: "gh pr create --draft"
+    expect: warn
+
+  - name: "warn-gh-pr-automerge: bare gh pr create"
+    tool: Bash
+    command: "gh pr create"
+    expect: warn
+
+  - name: "warn-gh-pr-automerge: allows gh pr list"
+    tool: Bash
+    command: "gh pr list"
+    expect: allow
+
+  - name: "warn-gh-pr-automerge: allows gh pr merge"
+    tool: Bash
+    command: "gh pr merge --auto --squash --delete-branch"
+    expect: allow
