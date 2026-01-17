@@ -12,10 +12,6 @@ updates:
       - "dependencies"
       - "automated"
     open-pull-requests-limit: 10
-    groups:
-      devcontainers:
-        patterns:
-          - "*"
 
   # GitHub Actions (SHA-pinned)
   - package-ecosystem: "github-actions"
