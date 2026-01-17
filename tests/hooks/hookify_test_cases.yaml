@@ -673,3 +673,41 @@ test_cases:
     tool: Read
     file_path: "/workspaces/project/config.yaml"
     expect: allow
+
+  # =============================================================================
+  # Conventional Commits Warning (warn-conventional-commits)
+  # =============================================================================
+  - name: "warn-conventional-commits: git commit -m"
+    tool: Bash
+    command: 'git commit -m "message"'
+    expect: warn
+
+  - name: "warn-conventional-commits: git commit --amend"
+    tool: Bash
+    command: "git commit --amend"
+    expect: warn
+
+  - name: "warn-conventional-commits: git commit -a -m"
+    tool: Bash
+    command: 'git commit -a -m "fix something"'
+    expect: warn
+
+  - name: "warn-conventional-commits: allows git add"
+    tool: Bash
+    command: "git add ."
+    expect: allow
+
+  - name: "warn-conventional-commits: allows git status"
+    tool: Bash
+    command: "git status"
+    expect: allow
+
+  - name: "warn-conventional-commits: allows git log"
+    tool: Bash
+    command: "git log --oneline"
+    expect: allow
+
+  - name: "warn-conventional-commits: chained git add && git commit"
+    tool: Bash
+    command: 'git add . && git commit -m "message"'
+    expect: warn
