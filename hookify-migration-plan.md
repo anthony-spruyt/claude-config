@@ -57,7 +57,7 @@ Issue [#12446](https://github.com/anthropics/claude-code/issues/12446) reported 
 
 Download hookify plugin from official source for reproducible tests:
 
-**Source:** https://github.com/anthropics/claude-plugins-official/tree/main/plugins/hookify
+**Source:** <https://github.com/anthropics/claude-plugins-official/tree/main/plugins/hookify>
 
 **Test setup script** (new file: `tests/helpers/setup_hookify.sh`):
 

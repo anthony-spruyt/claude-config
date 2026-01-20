@@ -23,6 +23,24 @@ Install the GitHub App to receive config updates:
 
 [Install Claude Config Sync](https://github.com/apps/claude-config-sync)
 
+#### Opting Out of Specific Config
+
+Target repos can exclude specific categories or files by adding `.claude/.sync-config.yaml`:
+
+```yaml
+# Opt out of entire categories
+exclude_categories:
+  - commands
+  - agents
+
+# Opt out of specific files (basename match)
+exclude_files:
+  - "hookify.common-block-kubectl-describe-secrets.local.md"
+  - "common-tdd.md"
+```
+
+**Available categories:** `settings`, `hookify`, `agents`, `rules`, `hooks`, `lib`, `commands`
+
 ### For Development
 
 Clone, open in VS Code, and reopen in devcontainer. See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed setup.
