@@ -18,6 +18,36 @@ CONFIG_BRANCH="${3:-main}"
 WORK_DIR=$(mktemp -d)
 BRANCH_NAME="chore/update-claude-config"
 
+# Check for yq (YAML parser) - needed for exclusion config
+if command -v yq &> /dev/null; then
+  YQ_AVAILABLE=true
+else
+  YQ_AVAILABLE=false
+fi
+
+# Exclusion arrays (populated after cloning target repo)
+EXCLUDE_CATEGORIES=()
+EXCLUDE_FILES=()
+
+# Check if category is excluded
+is_category_excluded() {
+  local category="$1"
+  for excluded in "${EXCLUDE_CATEGORIES[@]}"; do
+    [ "$excluded" = "$category" ] && return 0
+  done
+  return 1
+}
+
+# Check if file is excluded (basename match)
+is_file_excluded() {
+  local filepath="$1"
+  local basename="${filepath##*/}"
+  for excluded in "${EXCLUDE_FILES[@]}"; do
+    [ "$excluded" = "$basename" ] && return 0
+  done
+  return 1
+}
+
 # Cleanup on exit
 trap 'rm -rf "$WORK_DIR"' EXIT
 
@@ -37,78 +67,122 @@ git clone --depth 1 \
 # Ensure target has .claude directory structure
 mkdir -p target/.claude/agents target/.claude/rules target/.claude/hooks target/.claude/lib target/.claude/commands
 
+# Load exclusions from target repo (if config exists)
+SYNC_CONFIG="target/.claude/.sync-config.yaml"
+if [ "$YQ_AVAILABLE" = true ] && [ -f "$SYNC_CONFIG" ]; then
+  echo "📋 Found .sync-config.yaml - loading exclusions..."
+
+  # Read exclude_categories array
+  while IFS= read -r cat; do
+    [ -n "$cat" ] && EXCLUDE_CATEGORIES+=("$cat")
+  done < <(yq -r '.exclude_categories[]? // empty' "$SYNC_CONFIG" 2>/dev/null)
+
+  # Read exclude_files array
+  while IFS= read -r file; do
+    [ -n "$file" ] && EXCLUDE_FILES+=("$file")
+  done < <(yq -r '.exclude_files[]? // empty' "$SYNC_CONFIG" 2>/dev/null)
+
+  [ ${#EXCLUDE_CATEGORIES[@]} -gt 0 ] && echo "   Excluded categories: ${EXCLUDE_CATEGORIES[*]}"
+  [ ${#EXCLUDE_FILES[@]} -gt 0 ] && echo "   Excluded files: ${EXCLUDE_FILES[*]}"
+fi
+
 # Sync files with "common-" prefix (our watermark for central config files)
 # This allows repos to have their own files without being overwritten
 echo "📋 Syncing common config files..."
 
-# 1. Always sync settings.json
-cp config/.claude/settings.json target/.claude/
+# 1. Sync settings.json (unless excluded)
+if ! is_category_excluded "settings"; then
+  cp config/.claude/settings.json target/.claude/
+fi
 
 # 2. Sync hookify.common-*.local.md (delete removed, add new)
-for f in target/.claude/hookify.common-*.local.md; do
-  [ -e "$f" ] || continue
-  basename="${f##*/}"
-  [ -f "config/.claude/$basename" ] || rm -f "$f"
-done
-for f in config/.claude/hookify.common-*.local.md; do
-  [ -e "$f" ] && cp "$f" target/.claude/
-done
+if ! is_category_excluded "hookify"; then
+  for f in target/.claude/hookify.common-*.local.md; do
+    [ -e "$f" ] || continue
+    basename="${f##*/}"
+    [ -f "config/.claude/$basename" ] || rm -f "$f"
+  done
+  for f in config/.claude/hookify.common-*.local.md; do
+    [ -e "$f" ] || continue
+    is_file_excluded "$f" && continue
+    cp "$f" target/.claude/
+  done
+fi
 
 # 3. Sync agents/common-*.md (delete removed, add new)
-for f in target/.claude/agents/common-*.md; do
-  [ -e "$f" ] || continue
-  basename="${f##*/}"
-  [ -f "config/.claude/agents/$basename" ] || rm -f "$f"
-done
-for f in config/.claude/agents/common-*.md; do
-  [ -e "$f" ] && cp "$f" target/.claude/agents/
-done
+if ! is_category_excluded "agents"; then
+  for f in target/.claude/agents/common-*.md; do
+    [ -e "$f" ] || continue
+    basename="${f##*/}"
+    [ -f "config/.claude/agents/$basename" ] || rm -f "$f"
+  done
+  for f in config/.claude/agents/common-*.md; do
+    [ -e "$f" ] || continue
+    is_file_excluded "$f" && continue
+    cp "$f" target/.claude/agents/
+  done
+fi
 
 # 4. Sync rules/common-*.md (delete removed, add new)
-for f in target/.claude/rules/common-*.md; do
-  [ -e "$f" ] || continue
-  basename="${f##*/}"
-  [ -f "config/.claude/rules/$basename" ] || rm -f "$f"
-done
-for f in config/.claude/rules/common-*.md; do
-  [ -e "$f" ] && cp "$f" target/.claude/rules/
-done
+if ! is_category_excluded "rules"; then
+  for f in target/.claude/rules/common-*.md; do
+    [ -e "$f" ] || continue
+    basename="${f##*/}"
+    [ -f "config/.claude/rules/$basename" ] || rm -f "$f"
+  done
+  for f in config/.claude/rules/common-*.md; do
+    [ -e "$f" ] || continue
+    is_file_excluded "$f" && continue
+    cp "$f" target/.claude/rules/
+  done
+fi
 
 # 5. Sync hooks/common-*.py (delete removed, add new)
-for f in target/.claude/hooks/common-*.py; do
-  [ -e "$f" ] || continue
-  basename="${f##*/}"
-  [ -f "config/.claude/hooks/$basename" ] || rm -f "$f"
-done
-for f in config/.claude/hooks/common-*.py; do
-  [ -e "$f" ] && cp "$f" target/.claude/hooks/
-done
+if ! is_category_excluded "hooks"; then
+  for f in target/.claude/hooks/common-*.py; do
+    [ -e "$f" ] || continue
+    basename="${f##*/}"
+    [ -f "config/.claude/hooks/$basename" ] || rm -f "$f"
+  done
+  for f in config/.claude/hooks/common-*.py; do
+    [ -e "$f" ] || continue
+    is_file_excluded "$f" && continue
+    cp "$f" target/.claude/hooks/
+  done
+fi
 
 # 6. Sync lib/common_* directories (entire directories)
-# Delete dirs that no longer exist in config
-for d in target/.claude/lib/common_*; do
-  [ -d "$d" ] || continue
-  basename="${d##*/}"
-  [ -d "config/.claude/lib/$basename" ] || rm -rf "$d"
-done
-# Copy dirs from config (delete target first to remove stale files)
-for d in config/.claude/lib/common_*; do
-  [ -d "$d" ] || continue
-  basename="${d##*/}"
-  rm -rf "target/.claude/lib/$basename"
-  cp -r "$d" target/.claude/lib/
-done
+if ! is_category_excluded "lib"; then
+  # Delete dirs that no longer exist in config
+  for d in target/.claude/lib/common_*; do
+    [ -d "$d" ] || continue
+    basename="${d##*/}"
+    [ -d "config/.claude/lib/$basename" ] || rm -rf "$d"
+  done
+  # Copy dirs from config (delete target first to remove stale files)
+  for d in config/.claude/lib/common_*; do
+    [ -d "$d" ] || continue
+    is_file_excluded "$d" && continue
+    basename="${d##*/}"
+    rm -rf "target/.claude/lib/$basename"
+    cp -r "$d" target/.claude/lib/
+  done
+fi
 
 # 7. Sync commands/common-*.md (delete removed, add new)
 # Commands use common- prefix in filename but can have different invocation name via 'name' field
-for f in target/.claude/commands/common-*.md; do
-  [ -e "$f" ] || continue
-  basename="${f##*/}"
-  [ -f "config/.claude/commands/$basename" ] || rm -f "$f"
-done
-for f in config/.claude/commands/common-*.md; do
-  [ -e "$f" ] && cp "$f" target/.claude/commands/
-done
+if ! is_category_excluded "commands"; then
+  for f in target/.claude/commands/common-*.md; do
+    [ -e "$f" ] || continue
+    basename="${f##*/}"
+    [ -f "config/.claude/commands/$basename" ] || rm -f "$f"
+  done
+  for f in config/.claude/commands/common-*.md; do
+    [ -e "$f" ] || continue
+    is_file_excluded "$f" && continue
+    cp "$f" target/.claude/commands/
+  done
+fi
 
 # Check if anything changed (including new untracked files)
 cd target

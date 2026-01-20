@@ -162,6 +162,33 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
 - See [.n8n/README.md](.n8n/README.md) for n8n workflow template and setup instructions
 - Alternative: Manually trigger via GitHub UI (Actions → Sync to Target Repos → Run workflow)
 
+### Sync Opt-Out (Target Repos)
+
+Target repositories can opt out of specific synced files by adding `.claude/.sync-config.yaml`:
+
+```yaml
+# Opt out of entire categories
+exclude_categories:
+  - commands # Don't sync common-*.md commands
+  - agents # Don't sync common-*.md agents
+
+# Opt out of specific files (basename match)
+exclude_files:
+  - "hookify.common-block-kubectl-describe-secrets.local.md"
+  - "common-tdd.md"
+```
+
+**Available categories:** `settings`, `hookify`, `agents`, `rules`, `hooks`, `lib`, `commands`
+
+**How it works:**
+
+1. Sync script clones target repo
+2. Checks for `.claude/.sync-config.yaml`
+3. Skips excluded categories/files during sync
+4. Excluded files are not deleted if they already exist
+
+**Note:** Requires `yq` (YAML parser) on the sync runner. If `yq` is unavailable, exclusions are ignored and all files sync normally.
+
 ### Configuration Components
 
 - **[.claude/settings.json](.claude/settings.json)** - Core configuration:
