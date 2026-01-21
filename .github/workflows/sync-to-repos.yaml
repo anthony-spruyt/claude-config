@@ -6,6 +6,11 @@ on:
     paths:
       - ".claude/**"
   workflow_dispatch:
+    inputs:
+      target_repos:
+        description: "Comma-separated repos to sync (e.g., owner/repo1,owner/repo2). Empty = all repos."
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -69,9 +74,10 @@ jobs:
           echo "::add-mask::${JWT}"
           echo "jwt=${JWT}" >> "$GITHUB_OUTPUT"
 
-      - name: Sync to all installations
+      - name: Sync to installations
         env:
           APP_JWT: ${{ steps.app-jwt.outputs.jwt }}
+          TARGET_REPOS: ${{ inputs.target_repos }}
         run: |
           total_repos=0
           failed_repos=""
@@ -96,57 +102,123 @@ jobs:
           echo "Found $(wc -l < installations.txt) installations:"
           cat installations.txt
 
-          # Process each installation
-          while IFS=: read -r installation_id owner; do
+          # If TARGET_REPOS is specified, use single-repo mode
+          if [ -n "$TARGET_REPOS" ]; then
             echo ""
-            echo "========================================"
-            echo "Processing installation ${installation_id} (${owner})"
-            echo "========================================"
+            echo "🎯 Single-repo mode: syncing to specific repos"
+            echo "   Target repos: $TARGET_REPOS"
 
-            # Get installation token using curl
-            token_response=$(curl -s --max-time 30 -w '\n%{http_code}' -X POST \
-              -H "Authorization: Bearer $APP_JWT" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/app/installations/${installation_id}/access_tokens")
-            http_code="${token_response##*$'\n'}"
-            token_body="${token_response%$'\n'*}"
-            token=$(echo "$token_body" | jq -r '.token')
+            # Parse comma-separated repos
+            IFS=',' read -ra target_repos_array <<< "$TARGET_REPOS"
 
-            if [ "$http_code" != "201" ] || [ -z "$token" ] || [ "$token" = "null" ]; then
-              echo "⚠️  Failed to get token for installation ${installation_id} (HTTP $http_code)"
-              continue
-            fi
+            for target_repo in "${target_repos_array[@]}"; do
+              # Trim whitespace
+              target_repo=$(echo "$target_repo" | xargs)
+              target_owner="${target_repo%%/*}"
 
-            # Mask token in logs
-            echo "::add-mask::${token}"
-
-            # Get repos for this installation using curl
-            repos_response=$(curl -s --max-time 30 -w '\n%{http_code}' \
-              -H "Authorization: Bearer $token" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/installation/repositories)
-            repos_http_code="${repos_response##*$'\n'}"
-            repos_body="${repos_response%$'\n'*}"
-
-            if [ "$repos_http_code" != "200" ]; then
-              echo "⚠️  Failed to get repos for installation ${installation_id} (HTTP $repos_http_code)"
-              continue
-            fi
-
-            repos=$(echo "$repos_body" | jq -r '.repositories[].full_name')
-
-            # Sync to each repo
-            for repo in $repos; do
               echo ""
-              echo "Syncing to ${repo}..."
-              if GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" "$GITHUB_REPOSITORY" main; then
+              echo "========================================"
+              echo "Processing ${target_repo}"
+              echo "========================================"
+
+              # Find installation for this owner
+              installation_id=""
+              while IFS=: read -r inst_id owner; do
+                if [ "$owner" = "$target_owner" ]; then
+                  installation_id="$inst_id"
+                  break
+                fi
+              done < installations.txt
+
+              if [ -z "$installation_id" ]; then
+                echo "⚠️  No installation found for owner ${target_owner}"
+                failed_repos="${failed_repos} ${target_repo}"
+                continue
+              fi
+
+              # Get installation token
+              token_response=$(curl -s --max-time 30 -w '\n%{http_code}' -X POST \
+                -H "Authorization: Bearer $APP_JWT" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/app/installations/${installation_id}/access_tokens")
+              http_code="${token_response##*$'\n'}"
+              token_body="${token_response%$'\n'*}"
+              token=$(echo "$token_body" | jq -r '.token')
+
+              if [ "$http_code" != "201" ] || [ -z "$token" ] || [ "$token" = "null" ]; then
+                echo "⚠️  Failed to get token for ${target_repo} (HTTP $http_code)"
+                failed_repos="${failed_repos} ${target_repo}"
+                continue
+              fi
+
+              echo "::add-mask::${token}"
+
+              # Sync to target repo
+              echo "Syncing to ${target_repo}..."
+              if GH_TOKEN="${token}" ./sync-to-repo.sh "$target_repo" "$GITHUB_REPOSITORY" main; then
                 ((total_repos++)) || true
               else
-                echo "⚠️  Failed to sync $repo"
-                failed_repos="${failed_repos} ${repo}"
+                echo "⚠️  Failed to sync $target_repo"
+                failed_repos="${failed_repos} ${target_repo}"
               fi
             done
-          done < installations.txt
+          else
+            # All-repos mode: sync to all installations
+            echo ""
+            echo "📦 All-repos mode: syncing to all installations"
+
+            # Process each installation
+            while IFS=: read -r installation_id owner; do
+              echo ""
+              echo "========================================"
+              echo "Processing installation ${installation_id} (${owner})"
+              echo "========================================"
+
+              # Get installation token using curl
+              token_response=$(curl -s --max-time 30 -w '\n%{http_code}' -X POST \
+                -H "Authorization: Bearer $APP_JWT" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/app/installations/${installation_id}/access_tokens")
+              http_code="${token_response##*$'\n'}"
+              token_body="${token_response%$'\n'*}"
+              token=$(echo "$token_body" | jq -r '.token')
+
+              if [ "$http_code" != "201" ] || [ -z "$token" ] || [ "$token" = "null" ]; then
+                echo "⚠️  Failed to get token for installation ${installation_id} (HTTP $http_code)"
+                continue
+              fi
+
+              # Mask token in logs
+              echo "::add-mask::${token}"
+
+              # Get repos for this installation using curl
+              repos_response=$(curl -s --max-time 30 -w '\n%{http_code}' \
+                -H "Authorization: Bearer $token" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/installation/repositories)
+              repos_http_code="${repos_response##*$'\n'}"
+              repos_body="${repos_response%$'\n'*}"
+
+              if [ "$repos_http_code" != "200" ]; then
+                echo "⚠️  Failed to get repos for installation ${installation_id} (HTTP $repos_http_code)"
+                continue
+              fi
+
+              repos=$(echo "$repos_body" | jq -r '.repositories[].full_name')
+
+              # Sync to each repo
+              for repo in $repos; do
+                echo ""
+                echo "Syncing to ${repo}..."
+                if GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" "$GITHUB_REPOSITORY" main; then
+                  ((total_repos++)) || true
+                else
+                  echo "⚠️  Failed to sync $repo"
+                  failed_repos="${failed_repos} ${repo}"
+                fi
+              done
+            done < installations.txt
+          fi
 
           echo ""
           echo "========================================"
@@ -165,7 +237,13 @@ jobs:
             echo "| Metric | Value |"
             echo "|--------|-------|"
             echo "| Repositories processed | ${total_repos} |"
-            echo "| Installations | $(wc -l < installations.txt) |"
+            if [ -n "$TARGET_REPOS" ]; then
+              echo "| Mode | 🎯 Single-repo |"
+              echo "| Target repos | ${TARGET_REPOS} |"
+            else
+              echo "| Mode | 📦 All-repos |"
+              echo "| Installations | $(wc -l < installations.txt) |"
+            fi
             if [ -n "$failed_repos" ]; then
               echo "| Status | ⚠️ Partial success |"
               echo ""

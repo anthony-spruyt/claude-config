@@ -8,23 +8,39 @@ This directory contains n8n workflow templates for automating configuration sync
 
 This workflow automatically triggers the sync-to-repos GitHub Actions workflow when:
 
-- A new repository installs the GitHub App
-- Repositories are added to an existing installation
+- A new repository installs the GitHub App (`installation.created`)
+- Repositories are added to an existing installation (`installation_repositories.added`)
+- A user checks the "Request sync now" checkbox in the dashboard issue (`issues.edited`)
 
 ### How It Works
 
 ```text
-GitHub App (installation webhook)
+GitHub App Webhook
     ↓
-n8n Webhook
-    ↓ (filter: installation/installation_repositories events)
-    ↓ (filter: created/added actions)
-GitHub Node (dispatch event)
+n8n Webhook (receives all events)
     ↓
-GitHub Actions: sync-to-repos.yaml
-    ↓
-Target Repositories
+Route Events (Switch node)
+    ├─→ installation.created    → Extract Repos (Created)  ─┐
+    ├─→ installation_repos.added → Extract Repos (Added)    ├─→ Trigger Workflow Dispatch
+    └─→ issues.sync_requested   → Extract Repo (Issue)     ─┘        (with target_repos)
+                                                                          ↓
+                                                               GitHub Actions: sync-to-repos.yaml
+                                                                          ↓
+                                                                   Target Repositories
 ```
+
+### Event Routing
+
+| Event Type                  | Action    | Trigger Condition           | target_repos                            |
+| --------------------------- | --------- | --------------------------- | --------------------------------------- |
+| `installation`              | `created` | New app installation        | All repos from `repositories[]`         |
+| `installation_repositories` | `added`   | Repos added to installation | Repos from `repositories_added[]`       |
+| `issues`                    | `edited`  | Dashboard checkbox checked  | Single repo from `repository.full_name` |
+
+**Issues event filtering:**
+
+- Issue title contains "Claude Config Sync Dashboard"
+- Issue body contains `[x] **Request sync now**`
 
 ### Setup Instructions
 
@@ -44,16 +60,19 @@ Target Repositories
 2. Select `github-app-webhook-to-workflow-dispatch.json`
 3. Click **Import**
 
-#### 3. Configure GitHub App Webhook
+#### 3. Configure Claude Config Sync GitHub App
 
-1. Go to <https://github.com/settings/apps/n8n-spruyt-labs>
+1. Go to your Claude Config Sync GitHub App settings
 2. Under **Webhook**:
    - **Webhook URL:** Copy from n8n webhook node (Production URL)
    - **Active:** ✅ Enabled
-3. Under **Permissions & events** → **Subscribe to events**:
+3. Under **Permissions**:
+   - **Repository permissions → Issues:** Read and write
+4. Under **Permissions & events** → **Subscribe to events**:
    - ✅ **Installation**
    - ✅ **Installation repositories**
-4. Save changes
+   - ✅ **Issues** (for dashboard sync requests)
+5. Save changes
 
 #### 4. Activate Workflow
 
