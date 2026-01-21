@@ -48,6 +48,117 @@ is_file_excluded() {
   return 1
 }
 
+# ============================================
+# Dashboard Issue Management Functions
+# ============================================
+
+# Config version (set after cloning config repo)
+CONFIG_VERSION=""
+
+# Generate dashboard issue body
+generate_dashboard_body() {
+  local status="$1"
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+  # Build exclusions section
+  local exclusions_section=""
+  if [ ${#EXCLUDE_CATEGORIES[@]} -gt 0 ] || [ ${#EXCLUDE_FILES[@]} -gt 0 ]; then
+    exclusions_section="
+## Exclusions
+
+"
+    if [ ${#EXCLUDE_CATEGORIES[@]} -gt 0 ]; then
+      exclusions_section+="**Categories:** ${EXCLUDE_CATEGORIES[*]}
+"
+    fi
+    if [ ${#EXCLUDE_FILES[@]} -gt 0 ]; then
+      exclusions_section+="**Files:** ${EXCLUDE_FILES[*]}
+"
+    fi
+  fi
+
+  cat << EOF
+# 🔄 Claude Config Sync Dashboard
+
+This issue allows you to request a config sync from the central claude-config repository.
+
+## Actions
+
+- [ ] **Request sync now** - Check this box to trigger a sync
+
+## Status
+
+| Field | Value |
+|-------|-------|
+| Last sync | ${timestamp} |
+| Config version | \`${CONFIG_VERSION}\` |
+| Status | ${status} |
+${exclusions_section}
+## Configuration
+
+To opt out of specific synced files, create \`.claude/.sync-config.yaml\`:
+
+\`\`\`yaml
+# Opt out of entire categories
+exclude_categories:
+  - commands  # Don't sync common-*.md commands
+
+# Opt out of specific files
+exclude_files:
+  - "hookify.common-block-kubectl-describe-secrets.local.md"
+\`\`\`
+
+---
+🤖 Managed by [sync-to-repo.sh](https://github.com/${CONFIG_REPO}/blob/main/sync-to-repo.sh)
+EOF
+}
+
+# Create or update dashboard issue
+create_or_update_dashboard() {
+  local status="$1"
+  local title="🔄 Claude Config Sync Dashboard"
+
+  echo ""
+  echo "📊 Managing dashboard issue..."
+
+  # Check for existing dashboard issue
+  local existing_number
+  existing_number=$(gh issue list \
+    --repo "$TARGET_REPO" \
+    --search "\"${title}\" in:title" \
+    --state open \
+    --json number \
+    --jq '.[0].number' 2>/dev/null || echo "")
+
+  local body
+  body=$(generate_dashboard_body "$status")
+
+  if [ -n "$existing_number" ] && [ "$existing_number" != "null" ]; then
+    echo "   Updating existing dashboard issue #${existing_number}..."
+    if gh issue edit "$existing_number" \
+      --repo "$TARGET_REPO" \
+      --body "$body" 2>/dev/null; then
+      echo "   ✅ Dashboard updated: https://github.com/${TARGET_REPO}/issues/${existing_number}"
+    else
+      echo "   ⚠️  Failed to update dashboard issue"
+    fi
+  else
+    echo "   Creating new dashboard issue..."
+    local issue_url
+    if issue_url=$(gh issue create \
+      --repo "$TARGET_REPO" \
+      --title "$title" \
+      --body "$body" 2>/dev/null); then
+      echo "   ✅ Dashboard created: ${issue_url}"
+    else
+      echo "   ⚠️  Failed to create dashboard issue"
+    fi
+  fi
+}
+
+# ============================================
+
 # Cleanup on exit
 trap 'rm -rf "$WORK_DIR"' EXIT
 
@@ -63,6 +174,9 @@ git clone --depth 1 --branch "$CONFIG_BRANCH" --single-branch \
   "https://x-access-token:${GH_TOKEN}@github.com/${CONFIG_REPO}.git" config
 git clone --depth 1 \
   "https://x-access-token:${GH_TOKEN}@github.com/${TARGET_REPO}.git" target
+
+# Get config version (commit SHA) for dashboard
+CONFIG_VERSION=$(git -C config rev-parse --short HEAD)
 
 # Ensure target has .claude directory structure
 mkdir -p target/.claude/agents target/.claude/rules target/.claude/hooks target/.claude/lib target/.claude/commands
@@ -189,6 +303,7 @@ cd target
 git add .claude/
 if git diff --cached --quiet .claude/; then
   echo "✅ No changes detected - already up to date"
+  create_or_update_dashboard "✅ Up to date"
   exit 0
 fi
 
@@ -266,3 +381,6 @@ fi
 echo ""
 echo "✅ Done! Pull request:"
 echo "   ${PR_URL}"
+
+# Update dashboard with sync status
+create_or_update_dashboard "✅ Synced (PR: ${PR_URL})"

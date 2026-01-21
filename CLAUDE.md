@@ -162,6 +162,24 @@ When new repositories install the GitHub App, automatically trigger sync via n8n
 - See [.n8n/README.md](.n8n/README.md) for n8n workflow template and setup instructions
 - Alternative: Manually trigger via GitHub UI (Actions → Sync to Target Repos → Run workflow)
 
+**Dashboard Issue (On-Demand Sync):**
+
+Each target repository gets a dashboard issue (`🔄 Claude Config Sync Dashboard`) that allows on-demand sync:
+
+- Created automatically on first sync
+- Contains a "Request sync now" checkbox
+- Checking the box triggers a single-repo sync via n8n webhook
+- Shows sync status, config version, and any exclusions
+
+Sync modes:
+
+| Trigger            | Mode         | Behavior                                                    |
+| ------------------ | ------------ | ----------------------------------------------------------- |
+| Push to `main`     | All-repos    | Syncs to all installations                                  |
+| New installation   | Single-repo  | Syncs only newly added repos                                |
+| Dashboard checkbox | Single-repo  | Syncs only the requesting repo                              |
+| Manual dispatch    | Configurable | Pass `target_repos` input for single-repo, or empty for all |
+
 ### Sync Opt-Out (Target Repos)
 
 Target repositories can opt out of specific synced files by adding `.claude/.sync-config.yaml`:

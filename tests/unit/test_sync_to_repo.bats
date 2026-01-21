@@ -122,3 +122,88 @@ extract_functions() {
   run is_file_excluded "common-tdd.md"
   assert_failure
 }
+
+# Dashboard function tests
+# Helper to extract dashboard functions
+
+extract_dashboard_functions() {
+  # Extract the dashboard functions from the script (between the two separator blocks)
+  # The functions are between "# Config version" and "# Cleanup on exit"
+  sed -n '/^# Config version/,/^# Cleanup on exit/p' "$SCRIPT_PATH" | head -n -2
+}
+
+setup_dashboard_test_env() {
+  # Set up required variables for dashboard functions
+  export CONFIG_REPO="test-owner/claude-config"
+  export CONFIG_VERSION="abc1234"
+  export TARGET_REPO="test-owner/test-repo"
+  export EXCLUDE_CATEGORIES=()
+  export EXCLUDE_FILES=()
+}
+
+@test "dashboard: generate_dashboard_body contains required sections" {
+  setup_dashboard_test_env
+  eval "$(extract_dashboard_functions)"
+  # Reset CONFIG_VERSION after eval (eval re-declares it as empty)
+  CONFIG_VERSION="abc1234"
+
+  output=$(generate_dashboard_body "✅ Up to date")
+
+  # Check for required sections
+  [[ "$output" == *"# 🔄 Claude Config Sync Dashboard"* ]]
+  [[ "$output" == *"## Actions"* ]]
+  [[ "$output" == *"- [ ] **Request sync now**"* ]]
+  [[ "$output" == *"## Status"* ]]
+  [[ "$output" == *"| Last sync |"* ]]
+  [[ "$output" == *"| Config version |"* ]]
+  [[ "$output" == *'`abc1234`'* ]]
+  [[ "$output" == *"| Status | ✅ Up to date |"* ]]
+  [[ "$output" == *"## Configuration"* ]]
+}
+
+@test "dashboard: generate_dashboard_body includes status parameter" {
+  setup_dashboard_test_env
+  eval "$(extract_dashboard_functions)"
+  CONFIG_VERSION="abc1234"
+
+  output=$(generate_dashboard_body "✅ Synced (PR: https://github.com/test/test/pull/1)")
+
+  [[ "$output" == *"Synced (PR: https://github.com/test/test/pull/1)"* ]]
+}
+
+@test "dashboard: generate_dashboard_body includes exclusions when present" {
+  setup_dashboard_test_env
+  EXCLUDE_CATEGORIES=("agents" "commands")
+  EXCLUDE_FILES=("common-tdd.md")
+  eval "$(extract_dashboard_functions)"
+  CONFIG_VERSION="abc1234"
+
+  output=$(generate_dashboard_body "✅ Up to date")
+
+  [[ "$output" == *"## Exclusions"* ]]
+  [[ "$output" == *"**Categories:** agents commands"* ]]
+  [[ "$output" == *"**Files:** common-tdd.md"* ]]
+}
+
+@test "dashboard: generate_dashboard_body excludes exclusions section when empty" {
+  setup_dashboard_test_env
+  EXCLUDE_CATEGORIES=()
+  EXCLUDE_FILES=()
+  eval "$(extract_dashboard_functions)"
+  CONFIG_VERSION="abc1234"
+
+  output=$(generate_dashboard_body "✅ Up to date")
+
+  # Should NOT contain exclusions section
+  [[ "$output" != *"## Exclusions"* ]]
+}
+
+@test "dashboard: generate_dashboard_body contains config repo link" {
+  setup_dashboard_test_env
+  eval "$(extract_dashboard_functions)"
+  CONFIG_VERSION="abc1234"
+
+  output=$(generate_dashboard_body "✅ Up to date")
+
+  [[ "$output" == *"https://github.com/test-owner/claude-config"* ]]
+}

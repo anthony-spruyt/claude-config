@@ -1,17 +1,18 @@
 {
-  "name": "GitHub App Webhook → Workflow Dispatch",
+  "name": "Claude Config Sync Webhook",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "github-app-installation",
+        "responseMode": "responseNode",
         "options": {}
       },
       "id": "webhook-node",
       "name": "GitHub App Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
+      "position": [3264, 752],
       "webhookId": "github-app-installation"
     },
     {
@@ -20,7 +21,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -40,6 +42,15 @@
                 "type": "string",
                 "operation": "equals"
               }
+            },
+            {
+              "id": "issues-event",
+              "leftValue": "={{ $json.headers['x-github-event'] }}",
+              "rightValue": "issues",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "or"
@@ -50,7 +61,7 @@
       "name": "Filter Events",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
-      "position": [450, 300]
+      "position": [4160, 656]
     },
     {
       "parameters": {
@@ -78,6 +89,15 @@
                 "type": "string",
                 "operation": "equals"
               }
+            },
+            {
+              "id": "action-edited-dashboard",
+              "leftValue": "={{ $json.body.action === 'edited' && ($json.body.issue?.title || '').includes('Claude Config Sync Dashboard') && ($json.body.issue?.body || '').includes('[x] **Request sync now**') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "or"
@@ -88,7 +108,17 @@
       "name": "Filter Actions",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
-      "position": [650, 300]
+      "position": [4384, 656]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract target repos based on event type\nconst event = $input.first().json.headers['x-github-event'];\nconst body = $input.first().json.body;\nlet target_repos = '';\n\nif (event === 'installation' && body.action === 'created') {\n  // New installation - repos in body.repositories\n  const repos = body.repositories || [];\n  target_repos = repos.map(r => r.full_name).join(',');\n} else if (event === 'installation_repositories' && body.action === 'added') {\n  // Repos added to installation - repos in body.repositories_added\n  const repos = body.repositories_added || [];\n  target_repos = repos.map(r => r.full_name).join(',');\n} else if (event === 'issues' && body.action === 'edited') {\n  // Dashboard sync request - single repo\n  target_repos = body.repository.full_name;\n}\n\nreturn [{ json: { target_repos, headers: $input.first().json.headers, body } }];"
+      },
+      "id": "extract-target-repos",
+      "name": "Extract Target Repos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4608, 656]
     },
     {
       "parameters": {
@@ -96,7 +126,7 @@
         "resource": "workflow",
         "owner": {
           "__rl": true,
-          "value": "anthony-spruyt",
+          "value": "YOUR_GITHUB_USERNAME",
           "mode": "name"
         },
         "repository": {
@@ -113,39 +143,109 @@
           "__rl": true,
           "value": "main",
           "mode": "name"
-        }
+        },
+        "inputs": "={{ JSON.stringify({ target_repos: $json.target_repos }) }}"
       },
       "id": "trigger-workflow",
       "name": "Trigger Workflow Dispatch",
       "type": "n8n-nodes-base.github",
       "typeVersion": 1.1,
-      "position": [850, 300],
+      "position": [4832, 656],
       "credentials": {
         "githubOAuth2Api": {
-          "id": "github-oauth",
+          "id": "YOUR_CREDENTIAL_ID",
           "name": "GitHub OAuth2"
         }
       }
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Workflow dispatch triggered\" } }}",
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-200",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [3936, 656],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "respond-401",
+      "name": "Respond 401 Unauthorized",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [3936, 848],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ JSON.stringify($json.body) }}",
+        "dataPropertyName": "=signature-256",
+        "secret": "YOUR_GITHUB_WEBHOOK_SECRET"
+      },
+      "id": "compute-hmac",
+      "name": "Compute HMAC256",
+      "type": "n8n-nodes-base.crypto",
+      "position": [3488, 752],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "validate-signature",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json['signature-256'] }}",
+              "rightValue": "={{ $json.headers['x-hub-signature-256'].split('=').pop() }}"
+            }
+          ]
+        },
         "options": {}
       },
-      "id": "respond-success",
-      "name": "Respond Success",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [1050, 300]
+      "id": "validate-hmac",
+      "name": "Validate HMAC256",
+      "type": "n8n-nodes-base.if",
+      "position": [3712, 752],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "errorMessage": "HMAC256 signature doesn't match provided signature. Make sure that the GitHub webhook secret is identical to the secret stored in the 'Compute HMAC256' node."
+      },
+      "id": "stop-error",
+      "name": "Stop and Error",
+      "type": "n8n-nodes-base.stopAndError",
+      "position": [4160, 848],
+      "typeVersion": 1
     }
   ],
+  "pinData": {},
   "connections": {
     "GitHub App Webhook": {
       "main": [
         [
           {
-            "node": "Filter Events",
+            "node": "Compute HMAC256",
             "type": "main",
             "index": 0
           }
@@ -167,6 +267,17 @@
       "main": [
         [
           {
+            "node": "Extract Target Repos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Target Repos": {
+      "main": [
+        [
+          {
             "node": "Trigger Workflow Dispatch",
             "type": "main",
             "index": 0
@@ -175,10 +286,53 @@
       ]
     },
     "Trigger Workflow Dispatch": {
+      "main": [[]]
+    },
+    "Respond 200 OK": {
       "main": [
         [
           {
-            "node": "Respond Success",
+            "node": "Filter Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute HMAC256": {
+      "main": [
+        [
+          {
+            "node": "Validate HMAC256",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate HMAC256": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 401 Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 401 Unauthorized": {
+      "main": [
+        [
+          {
+            "node": "Stop and Error",
             "type": "main",
             "index": 0
           }
@@ -186,13 +340,8 @@
       ]
     }
   },
-  "pinData": {},
+  "active": false,
   "settings": {
     "executionOrder": "v1"
-  },
-  "staticData": null,
-  "tags": [],
-  "triggerCount": 1,
-  "updatedAt": "2026-01-06T00:00:00.000Z",
-  "versionId": "9"
+  }
 }
