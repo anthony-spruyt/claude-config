@@ -189,12 +189,12 @@ if [ "$YQ_AVAILABLE" = true ] && [ -f "$SYNC_CONFIG" ]; then
   # Read exclude_categories array
   while IFS= read -r cat; do
     [ -n "$cat" ] && EXCLUDE_CATEGORIES+=("$cat")
-  done < <(yq -r '.exclude_categories[]? // empty' "$SYNC_CONFIG" 2>/dev/null)
+  done < <(yq -r '.exclude_categories[]?' "$SYNC_CONFIG" 2>/dev/null)
 
   # Read exclude_files array
   while IFS= read -r file; do
     [ -n "$file" ] && EXCLUDE_FILES+=("$file")
-  done < <(yq -r '.exclude_files[]? // empty' "$SYNC_CONFIG" 2>/dev/null)
+  done < <(yq -r '.exclude_files[]?' "$SYNC_CONFIG" 2>/dev/null)
 
   [ ${#EXCLUDE_CATEGORIES[@]} -gt 0 ] && echo "   Excluded categories: ${EXCLUDE_CATEGORIES[*]}"
   [ ${#EXCLUDE_FILES[@]} -gt 0 ] && echo "   Excluded files: ${EXCLUDE_FILES[*]}"
