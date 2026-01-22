@@ -739,3 +739,337 @@ test_cases:
     tool: Bash
     command: "gh pr merge --auto --squash --delete-branch"
     expect: allow
+
+  # =============================================================================
+  # Echo Secrets (block-echo-secrets)
+  # =============================================================================
+  - name: "block-echo-secrets: echo $AZURE_DEVOPS_EXT_PAT"
+    tool: Bash
+    command: "echo $AZURE_DEVOPS_EXT_PAT"
+    expect: block
+
+  - name: "block-echo-secrets: echo with parameter expansion"
+    tool: Bash
+    command: 'echo "AZURE_DEVOPS_EXT_PAT is ${AZURE_DEVOPS_EXT_PAT:+set (hidden)}${AZURE_DEVOPS_EXT_PAT:-NOT SET}"'
+    expect: block
+
+  - name: "block-echo-secrets: echo GH_TOKEN"
+    tool: Bash
+    command: "echo $GH_TOKEN"
+    expect: block
+
+  - name: "block-echo-secrets: echo GITHUB_TOKEN"
+    tool: Bash
+    command: 'echo "Token: ${GITHUB_TOKEN}"'
+    expect: block
+
+  - name: "block-echo-secrets: echo AWS_SECRET_ACCESS_KEY"
+    tool: Bash
+    command: "echo $AWS_SECRET_ACCESS_KEY"
+    expect: block
+
+  - name: "block-echo-secrets: echo DATABASE_PASSWORD"
+    tool: Bash
+    command: 'echo "DB password is $DATABASE_PASSWORD"'
+    expect: block
+
+  - name: "block-echo-secrets: echo API_KEY"
+    tool: Bash
+    command: "echo $MY_API_KEY"
+    expect: block
+
+  - name: "block-echo-secrets: echo PRIVATE_KEY"
+    tool: Bash
+    command: "echo $SSH_PRIVATE_KEY"
+    expect: block
+
+  - name: "block-echo-secrets: printf with secret"
+    tool: Bash
+    command: 'printf "%s" "$SECRET_TOKEN"'
+    expect: block
+
+  - name: "block-echo-secrets: echo CREDENTIAL"
+    tool: Bash
+    command: "echo $AZURE_CREDENTIAL"
+    expect: block
+
+  - name: "block-echo-secrets: allows echo PATH (not PAT)"
+    tool: Bash
+    command: "echo $PATH"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo HOME"
+    tool: Bash
+    command: "echo $HOME"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo with literal string"
+    tool: Bash
+    command: 'echo "This is a test message"'
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo USER"
+    tool: Bash
+    command: "echo $USER"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo PWD"
+    tool: Bash
+    command: "echo $PWD"
+    expect: allow
+
+  # Chained commands
+  - name: "block-echo-secrets: chained with &&"
+    tool: Bash
+    command: "cd /tmp && echo $SECRET_TOKEN"
+    expect: block
+
+  - name: "block-echo-secrets: chained with ||"
+    tool: Bash
+    command: "false || echo $GH_TOKEN"
+    expect: block
+
+  - name: "block-echo-secrets: chained with semicolon"
+    tool: Bash
+    command: "ls; echo $DATABASE_PASSWORD"
+    expect: block
+
+  - name: "block-echo-secrets: secret echo then other command"
+    tool: Bash
+    command: "echo $API_KEY && ls"
+    expect: block
+
+  - name: "block-echo-secrets: in subshell"
+    tool: Bash
+    command: "(echo $SECRET_TOKEN)"
+    expect: block
+
+  - name: "block-echo-secrets: backtick substitution"
+    tool: Bash
+    command: "echo `echo $AWS_SECRET_ACCESS_KEY`"
+    expect: block
+
+  # More valid use cases
+  - name: "block-echo-secrets: allows echo SHELL"
+    tool: Bash
+    command: "echo $SHELL"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo TERM"
+    tool: Bash
+    command: "echo $TERM"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo with arithmetic"
+    tool: Bash
+    command: "echo $((1+1))"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo exit status"
+    tool: Bash
+    command: "echo $?"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo PID"
+    tool: Bash
+    command: "echo $$"
+    expect: allow
+
+  - name: "block-echo-secrets: allows chained safe echo"
+    tool: Bash
+    command: "cd /tmp && echo $HOME"
+    expect: allow
+
+  - name: "block-echo-secrets: allows echo with command substitution"
+    tool: Bash
+    command: "echo $(pwd)"
+    expect: allow
+
+  - name: "block-echo-secrets: allows printf safe variable"
+    tool: Bash
+    command: 'printf "%s\n" "$HOME"'
+    expect: allow
+
+  # =============================================================================
+  # Heredoc Secrets (block-heredoc-secrets)
+  # =============================================================================
+  - name: "block-heredoc-secrets: heredoc with SECRET_TOKEN"
+    tool: Bash
+    command: "cat <<EOF\nToken is $SECRET_TOKEN\nEOF"
+    expect: block
+
+  - name: "block-heredoc-secrets: heredoc with AZURE_DEVOPS_EXT_PAT"
+    tool: Bash
+    command: "cat <<EOF\nPAT: $AZURE_DEVOPS_EXT_PAT\nEOF"
+    expect: block
+
+  - name: "block-heredoc-secrets: heredoc with API_KEY"
+    tool: Bash
+    command: "cat <<-EOF\nKey: ${MY_API_KEY}\nEOF"
+    expect: block
+
+  - name: "block-heredoc-secrets: heredoc with PASSWORD"
+    tool: Bash
+    command: "cat <<END\nPassword is $DB_PASSWORD\nEND"
+    expect: block
+
+  # NOTE: These warn (not allow) because `cat` triggers warn-use-read-tool
+  - name: "block-heredoc-secrets: heredoc without secrets warns (cat rule)"
+    tool: Bash
+    command: "cat <<EOF\nHello world\nEOF"
+    expect: warn
+
+  - name: "block-heredoc-secrets: heredoc with PATH warns (cat rule, not blocked)"
+    tool: Bash
+    command: "cat <<EOF\nPATH is $PATH\nEOF"
+    expect: warn
+
+  # =============================================================================
+  # Echo Subshell Secrets (block-echo-subshell-secrets)
+  # =============================================================================
+  - name: "block-echo-subshell-secrets: echo $(env)"
+    tool: Bash
+    command: "echo $(env)"
+    expect: block
+
+  - name: "block-echo-subshell-secrets: echo $(printenv)"
+    tool: Bash
+    command: "echo $(printenv)"
+    expect: block
+
+  - name: "block-echo-subshell-secrets: echo $(set)"
+    tool: Bash
+    command: "echo $(set)"
+    expect: block
+
+  - name: "block-echo-subshell-secrets: printf with env"
+    tool: Bash
+    command: 'printf "%s" "$(env)"'
+    expect: block
+
+  - name: "block-echo-subshell-secrets: allows echo $(date)"
+    tool: Bash
+    command: "echo $(date)"
+    expect: allow
+
+  - name: "block-echo-subshell-secrets: allows echo $(whoami)"
+    tool: Bash
+    command: "echo $(whoami)"
+    expect: allow
+
+  # Chained commands
+  - name: "block-echo-subshell-secrets: chained with &&"
+    tool: Bash
+    command: "cd /tmp && echo $(env)"
+    expect: block
+
+  - name: "block-echo-subshell-secrets: chained with semicolon"
+    tool: Bash
+    command: "ls; echo $(printenv)"
+    expect: block
+
+  - name: "block-echo-subshell-secrets: in subshell"
+    tool: Bash
+    command: "(echo $(set))"
+    expect: block
+
+  # More valid use cases
+  - name: "block-echo-subshell-secrets: allows echo $(ls)"
+    tool: Bash
+    command: "echo $(ls)"
+    expect: allow
+
+  - name: "block-echo-subshell-secrets: allows echo $(pwd)"
+    tool: Bash
+    command: "echo $(pwd)"
+    expect: allow
+
+  - name: "block-echo-subshell-secrets: allows echo $(uname -a)"
+    tool: Bash
+    command: "echo $(uname -a)"
+    expect: allow
+
+  - name: "block-echo-subshell-secrets: allows printf with date"
+    tool: Bash
+    command: 'printf "%s" "$(date)"'
+    expect: allow
+
+  # =============================================================================
+  # Set Dump (block-set-dump)
+  # =============================================================================
+  - name: "block-set-dump: standalone set"
+    tool: Bash
+    command: "set"
+    expect: block
+
+  - name: "block-set-dump: set with pipe"
+    tool: Bash
+    command: "set | head"
+    expect: block
+
+  - name: "block-set-dump: set with grep"
+    tool: Bash
+    command: "set | grep SECRET"
+    expect: block
+
+  - name: "block-set-dump: chained set"
+    tool: Bash
+    command: "cd /tmp && set"
+    expect: block
+
+  - name: "block-set-dump: allows set -e"
+    tool: Bash
+    command: "set -e"
+    expect: allow
+
+  - name: "block-set-dump: allows set -x"
+    tool: Bash
+    command: "set -x"
+    expect: allow
+
+  - name: "block-set-dump: allows set -o pipefail"
+    tool: Bash
+    command: "set -o pipefail"
+    expect: allow
+
+  - name: "block-set-dump: allows set +e"
+    tool: Bash
+    command: "set +e"
+    expect: allow
+
+  # More chaining tests
+  - name: "block-set-dump: set in subshell"
+    tool: Bash
+    command: "(set)"
+    expect: block
+
+  - name: "block-set-dump: set with ||"
+    tool: Bash
+    command: "false || set"
+    expect: block
+
+  - name: "block-set-dump: backtick set"
+    tool: Bash
+    command: "echo `set`"
+    expect: block
+
+  # More valid use cases
+  - name: "block-set-dump: allows set -- args"
+    tool: Bash
+    command: "set -- arg1 arg2 arg3"
+    expect: allow
+
+  - name: "block-set-dump: allows set -euo pipefail"
+    tool: Bash
+    command: "set -euo pipefail"
+    expect: allow
+
+  - name: "block-set-dump: allows set +x in chained"
+    tool: Bash
+    command: "set -x && echo test && set +x"
+    expect: allow
+
+  - name: "block-set-dump: allows set -a"
+    tool: Bash
+    command: "set -a"
+    expect: allow
