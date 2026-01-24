@@ -78,8 +78,11 @@ See [CLAUDE.md](CLAUDE.md) for detailed pattern matching reference and common mi
 ## Usage
 
 ```bash
-# Sync config to a specific repository
-./sync-to-repo.sh USER/target-repo
+# Manually trigger sync to all repos
+gh workflow run "Sync to Target Repos"
+
+# Sync to specific repos only
+gh workflow run "Sync to Target Repos" -f target_repos="owner/repo"
 
 # Run tests and linter
 ./test.sh
