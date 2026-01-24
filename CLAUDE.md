@@ -33,12 +33,14 @@ bats tests/unit/      # Shell script tests
 
 ### Configuration Sync
 
-```bash
-# Sync config to a target repository
-./sync-to-repo.sh USER/target-repo
+Syncing is automated via GitHub Actions. To manually trigger a sync:
 
-# Optionally specify source repo and branch
-./sync-to-repo.sh USER/target-repo USER/claude-config main
+```bash
+# Sync to all repos with the GitHub App installed
+gh workflow run "Sync to Target Repos"
+
+# Sync to specific repos only
+gh workflow run "Sync to Target Repos" -f target_repos="owner/repo1,owner/repo2"
 ```
 
 **Note:** GitHub Actions automatically syncs `.claude/**` changes to all repositories where the GitHub App is installed when changes are pushed to `main`.
