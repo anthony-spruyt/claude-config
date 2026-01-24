@@ -4,3 +4,6 @@ https://api.github.com/.*
 
 # conventionalcommits.org has intermittent SSL issues in CI
 https://www.conventionalcommits.org/.*
+
+# Shell variables in workflow files get URL-encoded as %7B (for {)
+.*%7B.*

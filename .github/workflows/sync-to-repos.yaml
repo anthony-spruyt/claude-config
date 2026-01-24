@@ -16,31 +16,12 @@ permissions:
   contents: read
 
 jobs:
-  sync-all-installations:
+  discover:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+      has-repos: ${{ steps.build-matrix.outputs.has-repos }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Import GPG key
-        id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-
-      - name: Setup Git
-        run: |
-          git config --global user.name "${{ steps.import-gpg.outputs.name }}"
-          git config --global user.email "${{ steps.import-gpg.outputs.email }}"
-
-      - name: Install yq
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
-
       - name: Generate GitHub App JWT
         id: app-jwt
         env:
@@ -48,13 +29,11 @@ jobs:
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
         run: |
           # Generate JWT for GitHub App authentication
-          # Based on: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app
-
           NOW=$(date +%s)
           IAT=$((NOW - 60))
           EXP=$((NOW + 600))
 
-          # Write private key to temp file (handles both escaped \n and real newlines)
+          # Write private key to temp file
           KEY_FILE=$(mktemp)
           printf '%s' "$APP_PRIVATE_KEY" | sed -e $'s/\\\\n/\\\n/g' > "$KEY_FILE"
 
@@ -65,24 +44,19 @@ jobs:
           # Sign with private key
           SIGNATURE=$(printf '%s' "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" -binary | base64 -w 0 | tr -d '=' | tr '/+' '_-')
 
-          # Clean up key file
           rm -f "$KEY_FILE"
 
           JWT="${HEADER}.${PAYLOAD}.${SIGNATURE}"
-
-          # Mask the JWT in logs and output
           echo "::add-mask::${JWT}"
           echo "jwt=${JWT}" >> "$GITHUB_OUTPUT"
 
-      - name: Sync to installations
+      - name: Build repository matrix
+        id: build-matrix
         env:
           APP_JWT: ${{ steps.app-jwt.outputs.jwt }}
           TARGET_REPOS: ${{ inputs.target_repos }}
         run: |
-          total_repos=0
-          failed_repos=""
-
-          # Get all installations using curl (gh cli has issues with JWT auth)
+          # Get all installations
           echo "Getting all installations..."
           installations_response=$(curl -s --max-time 30 -w '\n%{http_code}' \
             -H "Authorization: Bearer $APP_JWT" \
@@ -92,49 +66,45 @@ jobs:
           installations_body="${installations_response%$'\n'*}"
 
           if [ "$http_code" != "200" ]; then
-            echo "❌ Failed to get installations (HTTP $http_code)"
-            echo "$installations_body" | head -5
+            echo "::error::Failed to get installations (HTTP $http_code)"
             exit 1
           fi
 
-          echo "$installations_body" | jq -r '.[] | "\(.id):\(.account.login)"' > installations.txt
+          # Build installation lookup: owner -> installation_id
+          declare -A owner_to_installation
+          while IFS=: read -r inst_id owner; do
+            owner_to_installation["$owner"]="$inst_id"
+          done < <(echo "$installations_body" | jq -r '.[] | "\(.id):\(.account.login)"')
 
-          echo "Found $(wc -l < installations.txt) installations:"
-          cat installations.txt
+          echo "Found ${#owner_to_installation[@]} installations"
 
-          # If TARGET_REPOS is specified, use single-repo mode
+          # Build matrix array
+          matrix_items=()
+
           if [ -n "$TARGET_REPOS" ]; then
-            echo ""
-            echo "🎯 Single-repo mode: syncing to specific repos"
-            echo "   Target repos: $TARGET_REPOS"
-
-            # Parse comma-separated repos
+            # Single-repo mode: use specified repos
+            echo "Mode: Single-repo (target: $TARGET_REPOS)"
             IFS=',' read -ra target_repos_array <<< "$TARGET_REPOS"
 
-            for target_repo in "${target_repos_array[@]}"; do
-              # Trim whitespace
-              target_repo=$(echo "$target_repo" | xargs)
-              target_owner="${target_repo%%/*}"
+            for repo in "${target_repos_array[@]}"; do
+              repo=$(echo "$repo" | xargs)  # Trim whitespace
+              owner="${repo%%/*}"
+              repo_name="${repo#*/}"
 
-              echo ""
-              echo "========================================"
-              echo "Processing ${target_repo}"
-              echo "========================================"
-
-              # Find installation for this owner
-              installation_id=""
-              while IFS=: read -r inst_id owner; do
-                if [ "$owner" = "$target_owner" ]; then
-                  installation_id="$inst_id"
-                  break
-                fi
-              done < installations.txt
-
+              installation_id="${owner_to_installation[$owner]:-}"
               if [ -z "$installation_id" ]; then
-                echo "⚠️  No installation found for owner ${target_owner}"
-                failed_repos="${failed_repos} ${target_repo}"
+                echo "::warning::No installation found for owner $owner"
                 continue
               fi
+
+              matrix_items+=("{\"repo\":\"$repo\",\"owner\":\"$owner\",\"repo_name\":\"$repo_name\",\"installation_id\":\"$installation_id\"}")
+            done
+          else
+            # All-repos mode: get repos from all installations
+            echo "Mode: All-repos"
+
+            for owner in "${!owner_to_installation[@]}"; do
+              installation_id="${owner_to_installation[$owner]}"
 
               # Get installation token
               token_response=$(curl -s --max-time 30 -w '\n%{http_code}' -X POST \
@@ -146,52 +116,12 @@ jobs:
               token=$(echo "$token_body" | jq -r '.token')
 
               if [ "$http_code" != "201" ] || [ -z "$token" ] || [ "$token" = "null" ]; then
-                echo "⚠️  Failed to get token for ${target_repo} (HTTP $http_code)"
-                failed_repos="${failed_repos} ${target_repo}"
+                echo "::warning::Failed to get token for installation $installation_id"
                 continue
               fi
-
               echo "::add-mask::${token}"
 
-              # Sync to target repo
-              echo "Syncing to ${target_repo}..."
-              if GH_TOKEN="${token}" ./sync-to-repo.sh "$target_repo" "$GITHUB_REPOSITORY" main; then
-                ((total_repos++)) || true
-              else
-                echo "⚠️  Failed to sync $target_repo"
-                failed_repos="${failed_repos} ${target_repo}"
-              fi
-            done
-          else
-            # All-repos mode: sync to all installations
-            echo ""
-            echo "📦 All-repos mode: syncing to all installations"
-
-            # Process each installation
-            while IFS=: read -r installation_id owner; do
-              echo ""
-              echo "========================================"
-              echo "Processing installation ${installation_id} (${owner})"
-              echo "========================================"
-
-              # Get installation token using curl
-              token_response=$(curl -s --max-time 30 -w '\n%{http_code}' -X POST \
-                -H "Authorization: Bearer $APP_JWT" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/app/installations/${installation_id}/access_tokens")
-              http_code="${token_response##*$'\n'}"
-              token_body="${token_response%$'\n'*}"
-              token=$(echo "$token_body" | jq -r '.token')
-
-              if [ "$http_code" != "201" ] || [ -z "$token" ] || [ "$token" = "null" ]; then
-                echo "⚠️  Failed to get token for installation ${installation_id} (HTTP $http_code)"
-                continue
-              fi
-
-              # Mask token in logs
-              echo "::add-mask::${token}"
-
-              # Get repos for this installation using curl
+              # Get repos for this installation
               repos_response=$(curl -s --max-time 30 -w '\n%{http_code}' \
                 -H "Authorization: Bearer $token" \
                 -H "Accept: application/vnd.github+json" \
@@ -200,59 +130,302 @@ jobs:
               repos_body="${repos_response%$'\n'*}"
 
               if [ "$repos_http_code" != "200" ]; then
-                echo "⚠️  Failed to get repos for installation ${installation_id} (HTTP $repos_http_code)"
+                echo "::warning::Failed to get repos for installation $installation_id"
                 continue
               fi
 
-              repos=$(echo "$repos_body" | jq -r '.repositories[].full_name')
-
-              # Sync to each repo
-              for repo in $repos; do
-                echo ""
-                echo "Syncing to ${repo}..."
-                if GH_TOKEN="${token}" ./sync-to-repo.sh "$repo" "$GITHUB_REPOSITORY" main; then
-                  ((total_repos++)) || true
-                else
-                  echo "⚠️  Failed to sync $repo"
-                  failed_repos="${failed_repos} ${repo}"
-                fi
-              done
-            done < installations.txt
+              # Add each repo to matrix
+              while IFS= read -r repo; do
+                [ -z "$repo" ] && continue
+                repo_name="${repo#*/}"
+                matrix_items+=("{\"repo\":\"$repo\",\"owner\":\"$owner\",\"repo_name\":\"$repo_name\",\"installation_id\":\"$installation_id\"}")
+              done < <(echo "$repos_body" | jq -r '.repositories[].full_name')
+            done
           fi
 
-          echo ""
-          echo "========================================"
-          echo "✅ Sync complete: ${total_repos} repositories processed"
-          echo "========================================"
-
-          if [ -n "$failed_repos" ]; then
-            echo ""
-            echo "⚠️  Warning: Failed to sync:${failed_repos}"
+          # Build final matrix JSON
+          if [ ${#matrix_items[@]} -eq 0 ]; then
+            echo "No repositories found"
+            echo "has-repos=false" >> "$GITHUB_OUTPUT"
+            echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found ${#matrix_items[@]} repositories to sync"
+            matrix_json=$(printf '%s\n' "${matrix_items[@]}" | jq -s '{include: .}')
+            echo "has-repos=true" >> "$GITHUB_OUTPUT"
+            echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
           fi
 
-          # Write job summary
+  sync:
+    needs: discover
+    if: needs.discover.outputs.has-repos == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    steps:
+      - name: Generate token for ${{ matrix.repo }}
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ matrix.owner }}
+          repositories: ${{ matrix.repo_name }}
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: target
+
+      - name: Checkout config source
+        uses: actions/checkout@v4
+        with:
+          path: _config_source
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Sync config files
+        id: sync
+        run: |
+          chmod +x _config_source/scripts/sync-files.sh
+          _config_source/scripts/sync-files.sh _config_source target
+
+      - name: Get config version
+        id: version
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          cd _config_source
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create verified commit
+        if: steps.sync.outputs.changed == 'true'
+        uses: iarekylew00t/verified-bot-commit@v2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: ${{ matrix.repo }}
+          ref: refs/heads/chore/update-claude-config
+          workspace: target
+          message: |
+            chore(config): update Claude config
+
+            Updated configuration from ${{ github.repository }}.
+          files: .claude/**
+          force-push: true
+          if-no-commit: info
+
+      - name: Create or update PR
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DIFF_STAT: ${{ steps.sync.outputs.diff_stat }}
+          CHANGED_FILES: ${{ steps.sync.outputs.changed_files }}
+          CONFIG_REPO: ${{ github.repository }}
+          CONFIG_SHA: ${{ steps.version.outputs.sha }}
+          TARGET_REPO: ${{ matrix.repo }}
+        run: |
+          cd target
+          BRANCH_NAME="chore/update-claude-config"
+
+          # Check if PR already exists
+          existing_pr=$(gh pr list --repo "$TARGET_REPO" --head "$BRANCH_NAME" --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$existing_pr" ] && [ "$existing_pr" != "null" ]; then
+            echo "PR #${existing_pr} already exists - updating..."
+            pr_url="https://github.com/${TARGET_REPO}/pull/${existing_pr}"
+
+            # Update PR body with latest changes
+            gh pr edit "$existing_pr" --repo "$TARGET_REPO" --body "$(cat <<EOF
+          ## Config Update
+
+          **Source:** [${CONFIG_REPO}](https://github.com/${CONFIG_REPO}) @ \`${CONFIG_SHA}\`
+
+          ### Changes
+
+          \`\`\`
+          ${DIFF_STAT}
+          \`\`\`
+
+          ### Files Updated
+
+          \`\`\`
+          ${CHANGED_FILES}
+          \`\`\`
+
+          ### Review Checklist
+
+          - [ ] Review hookify rule changes
+          - [ ] Check settings.json permissions
+          - [ ] Verify no project-specific configs overwritten
+          - [ ] Test rules don't break development workflow
+
+          ---
+
+          Generated by [sync-to-repos.yaml](https://github.com/${CONFIG_REPO}/blob/main/.github/workflows/sync-to-repos.yaml)
+          EOF
+          )"
+          else
+            echo "Creating new PR..."
+            pr_url=$(gh pr create \
+              --repo "$TARGET_REPO" \
+              --head "$BRANCH_NAME" \
+              --title "chore(config): update Claude config" \
+              --body "$(cat <<EOF
+          ## Config Update
+
+          **Source:** [${CONFIG_REPO}](https://github.com/${CONFIG_REPO}) @ \`${CONFIG_SHA}\`
+
+          ### Changes
+
+          \`\`\`
+          ${DIFF_STAT}
+          \`\`\`
+
+          ### Files Updated
+
+          \`\`\`
+          ${CHANGED_FILES}
+          \`\`\`
+
+          ### Review Checklist
+
+          - [ ] Review hookify rule changes
+          - [ ] Check settings.json permissions
+          - [ ] Verify no project-specific configs overwritten
+          - [ ] Test rules don't break development workflow
+
+          ---
+
+          Generated by [sync-to-repos.yaml](https://github.com/${CONFIG_REPO}/blob/main/.github/workflows/sync-to-repos.yaml)
+          EOF
+          )")
+          fi
+
+          echo "PR: ${pr_url}"
+
+          # Try to enable automerge
+          if gh pr merge "$pr_url" --auto --squash --delete-branch 2>/dev/null; then
+            echo "Automerge enabled"
+          else
+            echo "Automerge not available (may need to be enabled on repo)"
+          fi
+
+      - name: Update dashboard issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          CONFIG_REPO: ${{ github.repository }}
+          CONFIG_SHA: ${{ steps.version.outputs.sha || 'N/A' }}
+          TARGET_REPO: ${{ matrix.repo }}
+        run: |
+          TITLE="Claude Config Sync Dashboard"
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          if [ "$CHANGED" = "true" ]; then
+            STATUS="Synced (check PRs)"
+          else
+            STATUS="Up to date"
+          fi
+
+          body="$(cat <<EOF
+          # Claude Config Sync Dashboard
+
+          This issue tracks config sync from the central claude-config repository.
+
+          ## Status
+
+          | Field | Value |
+          |-------|-------|
+          | Last sync | ${TIMESTAMP} |
+          | Config version | \`${CONFIG_SHA}\` |
+          | Status | ${STATUS} |
+
+          ## Actions
+
+          - [ ] **Request sync now** - Check this box to trigger a sync
+
+          ## Configuration
+
+          To opt out of specific synced files, create \`.claude/.sync-config.yaml\`:
+
+          \`\`\`yaml
+          exclude_categories:
+            - commands  # Don't sync common-*.md commands
+
+          exclude_files:
+            - "hookify.common-block-kubectl-describe-secrets.local.md"
+          \`\`\`
+
+          ---
+          Managed by [sync-to-repos.yaml](https://github.com/${CONFIG_REPO}/blob/main/.github/workflows/sync-to-repos.yaml)
+          EOF
+          )"
+
+          # Find existing dashboard issue
+          existing=$(gh issue list --repo "$TARGET_REPO" --search "\"${TITLE}\" in:title" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh issue edit "$existing" --repo "$TARGET_REPO" --body "$body" 2>/dev/null || true
+          else
+            gh issue create --repo "$TARGET_REPO" --title "$TITLE" --body "$body" 2>/dev/null || true
+          fi
+
+  summary:
+    needs: [discover, sync]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        env:
+          MATRIX: ${{ needs.discover.outputs.matrix }}
+          HAS_REPOS: ${{ needs.discover.outputs.has-repos }}
+          SYNC_RESULT: ${{ needs.sync.result }}
+          TARGET_REPOS: ${{ inputs.target_repos }}
+        run: |
           {
-            echo "## 🔄 Config Sync Summary"
+            echo "## Config Sync Summary"
             echo ""
+
+            if [ "$HAS_REPOS" != "true" ]; then
+              echo "No repositories found to sync."
+              exit 0
+            fi
+
+            # Count repos from matrix
+            repo_count=$(echo "$MATRIX" | jq '.include | length')
+
             echo "| Metric | Value |"
             echo "|--------|-------|"
-            echo "| Repositories processed | ${total_repos} |"
+            echo "| Repositories | ${repo_count} |"
+
             if [ -n "$TARGET_REPOS" ]; then
-              echo "| Mode | 🎯 Single-repo |"
-              echo "| Target repos | ${TARGET_REPOS} |"
+              echo "| Mode | Single-repo |"
+              echo "| Target | \`${TARGET_REPOS}\` |"
             else
-              echo "| Mode | 📦 All-repos |"
-              echo "| Installations | $(wc -l < installations.txt) |"
+              echo "| Mode | All-repos |"
             fi
-            if [ -n "$failed_repos" ]; then
-              echo "| Status | ⚠️ Partial success |"
-              echo ""
-              echo "### ❌ Failed Repositories"
-              echo ""
-              for repo in $failed_repos; do
-                echo "- \`${repo}\`"
-              done
-            else
-              echo "| Status | ✅ All synced |"
-            fi
+
+            case "$SYNC_RESULT" in
+              success)
+                echo "| Status | All synced |"
+                ;;
+              failure)
+                echo "| Status | Some failed |"
+                ;;
+              cancelled)
+                echo "| Status | Cancelled |"
+                ;;
+              skipped)
+                echo "| Status | Skipped |"
+                ;;
+              *)
+                echo "| Status | ${SYNC_RESULT:-Unknown} |"
+                ;;
+            esac
           } >> "$GITHUB_STEP_SUMMARY"
