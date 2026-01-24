@@ -150,7 +150,7 @@ jobs:
             echo "matrix={\"include\":[]}" >> "$GITHUB_OUTPUT"
           else
             echo "Found ${#matrix_items[@]} repositories to sync"
-            matrix_json=$(printf '%s\n' "${matrix_items[@]}" | jq -s '{include: .}')
+            matrix_json=$(printf '%s\n' "${matrix_items[@]}" | jq -sc '{include: .}')
             echo "has-repos=true" >> "$GITHUB_OUTPUT"
             echo "matrix=$matrix_json" >> "$GITHUB_OUTPUT"
           fi
