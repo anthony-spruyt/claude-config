@@ -23,19 +23,19 @@ Both repositories serve different but complementary purposes:
 
 | Feature                    | Our Repo             | Their Repo              | Priority  |
 | -------------------------- | -------------------- | ----------------------- | --------- |
-| **Security & Permissions** |
+| **Security & Permissions** |                      |                         |           |
 | File permission deny/allow | ✅ Comprehensive     | ❌ None                 | Keep      |
 | Secret exposure prevention | ✅ 31 hookify rules  | ❌ None                 | Keep      |
 | Command blocking           | ✅ Native bridge     | ❌ None                 | Keep      |
 | Security testing           | ✅ bats + Python     | ❌ None                 | Keep      |
-| **Distribution**           |
+| **Distribution**           |                      |                         |           |
 | Hub-and-spoke sync         | ✅ GitHub Actions    | ❌ None                 | Keep      |
 | Multi-repo automation      | ✅ Webhook support   | ❌ None                 | Keep      |
 | Opt-out mechanism          | ✅ .sync-config.yaml | ❌ None                 | Keep      |
-| **Plugin System**          |
+| **Plugin System**          |                      |                         |           |
 | Plugin architecture        | ❌ None              | ✅ plugin.json          | HIGH      |
 | Marketplace installation   | ❌ None              | ✅ Available            | HIGH      |
-| **Agents**                 |
+| **Agents**                 |                      |                         |           |
 | Agent count                | 0 (empty dir)        | 9 specialized           | HIGH      |
 | Architect agent            | ❌                   | ✅ ADRs + design        | HIGH      |
 | Security reviewer          | ❌                   | ✅ OWASP Top 10         | HIGH      |
@@ -46,7 +46,7 @@ Both repositories serve different but complementary purposes:
 | Doc updater                | ❌                   | ✅ Sync docs            | LOW       |
 | Refactor cleaner           | ❌                   | ✅ Dead code            | LOW       |
 | Planner                    | ❌                   | ✅ Task breakdown       | MEDIUM    |
-| **Commands**               |
+| **Commands**               |                      |                         |           |
 | Command count              | 0 (empty dir)        | 14 workflows            | HIGH      |
 | /tdd                       | ❌                   | ✅                      | HIGH      |
 | /plan                      | ❌                   | ✅                      | HIGH      |
@@ -57,37 +57,37 @@ Both repositories serve different but complementary purposes:
 | /learn                     | ❌                   | ✅                      | MEDIUM    |
 | /eval                      | ❌                   | ✅                      | LOW       |
 | /verify                    | ❌                   | ✅                      | LOW       |
-| **Skills System**          |
+| **Skills System**          |                      |                         |           |
 | Skills organization        | ❌ None              | ✅ 11 directories       | MEDIUM    |
 | TDD workflow               | ❌                   | ✅                      | HIGH      |
 | Continuous learning        | ❌                   | ✅ Session extraction   | HIGH      |
 | Verification loop          | ❌                   | ✅ Pass@k metrics       | MEDIUM    |
 | Backend patterns           | ❌                   | ✅                      | LOW       |
 | Frontend patterns          | ❌                   | ✅                      | LOW       |
-| **Context Management**     |
+| **Context Management**     |                      |                         |           |
 | Context modes              | ❌                   | ✅ dev/review/research  | MEDIUM    |
 | Memory persistence         | ❌                   | ✅ Session save/restore | HIGH      |
 | Session learning           | ❌                   | ✅ Pattern extraction   | HIGH      |
-| **Hooks**                  |
+| **Hooks**                  |                      |                         |           |
 | PreToolUse hooks           | ✅ Hookify bridge    | ✅ 4 hooks              | Merge     |
 | PostToolUse hooks          | ✅ Prettier          | ✅ 4 hooks              | Merge     |
 | PreCompact hooks           | ❌                   | ✅ State save           | HIGH      |
 | SessionStart hooks         | ❌                   | ✅ State restore        | HIGH      |
 | Stop hooks                 | ❌                   | ✅ 3 hooks              | HIGH      |
-| **MCP Servers**            |
+| **MCP Servers**            |                      |                         |           |
 | MCP configs                | ❌ None              | ✅ mcp-servers.json     | MEDIUM    |
 | GitHub MCP                 | ❌                   | ✅                      | MEDIUM    |
 | Supabase MCP               | ❌                   | ✅                      | LOW       |
 | Vercel MCP                 | ❌                   | ✅                      | LOW       |
-| **Examples & Templates**   |
+| **Examples & Templates**   |                      |                         |           |
 | Example CLAUDE.md          | ❌                   | ✅                      | HIGH      |
 | Example statusline         | ❌                   | ✅                      | MEDIUM    |
 | User templates             | ❌                   | ✅ user-CLAUDE.md       | MEDIUM    |
-| **Documentation**          |
+| **Documentation**          |                      |                         |           |
 | Setup guides               | ✅ CLAUDE.md         | ✅ Shorthand/Longform   | Enhance   |
 | Architecture docs          | ✅ Comprehensive     | ✅ Workflow-focused     | Keep both |
 | Contributing guide         | ✅ Basic             | ✅ Detailed templates   | Enhance   |
-| **Testing**                |
+| **Testing**                |                      |                         |           |
 | Test suite                 | ✅ bats + Python     | ❌ None                 | Keep      |
 | CI/CD validation           | ✅ GitHub Actions    | ❌ None                 | Keep      |
 | Linting                    | ✅ MegaLinter        | ❌ None                 | Keep      |
@@ -215,7 +215,7 @@ Organized workflow definitions in 11 subdirectories:
 
 **Structure:**
 
-```
+```text
 skills/
 ├── tdd-workflow/SKILL.md (9.7KB)
 ├── continuous-learning/
