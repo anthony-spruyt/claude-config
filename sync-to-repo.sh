@@ -327,7 +327,7 @@ Updated configuration from ${CONFIG_REPO}."
 
 # Push branch
 echo "⬆️  Pushing branch to origin..."
-git push -u origin "$BRANCH_NAME"
+git push -u origin "$BRANCH_NAME" --force-with-lease
 
 # Check if PR already exists
 EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number' 2>/dev/null || echo "")
