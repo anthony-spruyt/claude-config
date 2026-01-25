@@ -27,6 +27,19 @@ def get_rules_dir() -> Path:
     return cwd / ".claude"
 
 
+def reset_warning_state(session_id: str):
+    """Reset warning state when a new subagent starts.
+
+    This gives each subagent fresh warning counts.
+    """
+    if not session_id:
+        return
+    scope_id = session_id[:12]
+    state_file = Path(f"/tmp/claude-hookify-state-{scope_id}.json")
+    if state_file.exists():
+        state_file.unlink()
+
+
 def main():
     """Main entry point for PreToolUse hook."""
     try:
@@ -36,6 +49,12 @@ def main():
 
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
+    session_id = input_data.get("session_id", "")
+
+    # Reset warning state when spawning a subagent
+    # This gives each subagent fresh warnings
+    if tool_name == "Task":
+        reset_warning_state(session_id)
 
     # Map tool to event type
     if tool_name in ("Read", "Write", "Edit", "MultiEdit"):

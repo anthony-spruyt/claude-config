@@ -36,6 +36,7 @@ def main():
 
     tool_name = input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
+    session_id = input_data.get("session_id", "")
 
     # Map tool to event type
     if tool_name in ("Read", "Write", "Edit", "MultiEdit"):
@@ -62,8 +63,8 @@ def main():
     if not warn_rules:
         sys.exit(0)
 
-    # Initialize state for rate limiting
-    state = WarningState()
+    # Initialize state for rate limiting with session_id for per-agent scoping
+    state = WarningState(session_id)
 
     # Evaluate which rules match
     engine = RuleEngine()

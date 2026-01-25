@@ -2,12 +2,12 @@
 """Rate limiting state management for hookify-extended.
 
 Tracks warning counts per rule to support warn_once and warn_interval.
-State is stored in /tmp/claude-hookify-state-{ppid}.json with 24h TTL.
+State is stored in /tmp/claude-hookify-state-{session_id}.json with 24h TTL.
+
+Session ID is provided by Claude Code in hook input, giving per-agent scoping.
 """
 
-import hashlib
 import json
-import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -21,33 +21,25 @@ STATE_DIR = Path("/tmp")
 
 
 class WarningState:
-    """Manages rate limiting state for hookify warnings."""
+    """Manages rate limiting state for hookify warnings.
 
-    def __init__(self):
-        """Initialize state manager with PPID-based scope."""
-        self.scope_id = self._get_scope_id()
+    Uses session_id from Claude Code hook input for per-agent state scoping.
+    Each agent/subagent gets its own session_id, so warnings are tracked
+    independently per agent context.
+    """
+
+    def __init__(self, session_id: str):
+        """Initialize state manager with session-based scope.
+
+        Args:
+            session_id: Session ID from Claude Code hook input
+        """
+        self.session_id = session_id
+        # Use first 12 chars of session_id for shorter filenames
+        self.scope_id = session_id[:12] if session_id else "unknown"
         self.state_file = STATE_DIR / f"claude-hookify-state-{self.scope_id}.json"
         self._cleanup_old_state_files()
         self.state = self._load_state()
-
-    def _get_scope_id(self) -> str:
-        """Get scope identifier based on HOOKIFY_STATE_SCOPE env var.
-
-        Options:
-        - ppid (default): Per-agent context (subagents get separate state)
-        - cwd: Per-project (all agents share state)
-        - ppid+cwd: Per-agent-per-project
-        """
-        scope = os.environ.get("HOOKIFY_STATE_SCOPE", "ppid")
-        ppid = str(os.getppid())
-        cwd_hash = hashlib.sha256(os.getcwd().encode()).hexdigest()[:12]
-
-        if scope == "cwd":
-            return cwd_hash
-        elif scope == "ppid+cwd":
-            return f"{ppid}-{cwd_hash}"
-        else:  # default: ppid
-            return ppid
 
     def _cleanup_old_state_files(self):
         """Remove state files older than STATE_TTL_HOURS."""
@@ -65,7 +57,7 @@ class WarningState:
     def _load_state(self) -> dict:
         """Load state from file, return empty if stale or missing."""
         if not self.state_file.exists():
-            return {"created_at": datetime.now().isoformat(), "rules": {}}
+            return {"created_at": datetime.now().isoformat(), "session_id": self.session_id, "rules": {}}
 
         try:
             with open(self.state_file) as f:
@@ -79,11 +71,11 @@ class WarningState:
                 created = datetime(1970, 1, 1)
 
             if datetime.now() - created > timedelta(hours=STATE_TTL_HOURS):
-                return {"created_at": datetime.now().isoformat(), "rules": {}}
+                return {"created_at": datetime.now().isoformat(), "session_id": self.session_id, "rules": {}}
 
             return state
         except (json.JSONDecodeError, IOError, OSError):
-            return {"created_at": datetime.now().isoformat(), "rules": {}}
+            return {"created_at": datetime.now().isoformat(), "session_id": self.session_id, "rules": {}}
 
     def should_warn(self, rule: "Rule") -> bool:
         """Check if warning should be shown based on rate limiting.

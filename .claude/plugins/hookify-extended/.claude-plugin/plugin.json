@@ -1,8 +1,9 @@
 {
   "name": "hookify-extended",
   "description": "Extended hookify with rate-limited warnings and proper Claude message delivery",
+  "version": "1.0.0",
   "author": {
     "name": "claude-config",
-    "url": "https://github.com/anthony-spruyt/claude-config"
+    "email": "noreply@github.com"
   }
 }
