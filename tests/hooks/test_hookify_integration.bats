@@ -10,7 +10,25 @@ load '/usr/local/lib/bats/bats-assert/load'
 # Set REPO_ROOT
 REPO_ROOT="${REPO_ROOT:-/workspaces/claude-config}"
 
+# Find hookify plugin path (installed or local)
+find_hookify_plugin() {
+  local home="$HOME"
+  # Check installed hookify-plus
+  local path=$(ls -d "$home/.claude/plugins/cache/hookify-plus-local/hookify-plus/"*/ 2>/dev/null | tail -1)
+  if [[ -n "$path" ]]; then echo "$path"; return; fi
+  # Check other installed hookify variants
+  path=$(ls -d "$home/.claude/plugins/cache/"*/hookify-plus/*/ 2>/dev/null | tail -1)
+  if [[ -n "$path" ]]; then echo "$path"; return; fi
+  path=$(ls -d "$home/.claude/plugins/cache/"*/hookify/*/ 2>/dev/null | tail -1)
+  if [[ -n "$path" ]]; then echo "$path"; return; fi
+  # No plugin found
+  echo ""
+}
+
+HOOKIFY_PATH=$(find_hookify_plugin)
+
 @test "hookify integration: all test cases pass" {
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
   # Run the Python test runner with the test cases YAML
   run python3 "$REPO_ROOT/tests/helpers/run_hookify_tests.py" \
       "$REPO_ROOT/tests/hooks/hookify_test_cases.yaml" \
@@ -20,11 +38,12 @@ REPO_ROOT="${REPO_ROOT:-/workspaces/claude-config}"
 }
 
 @test "hookify integration: hookify package is importable" {
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
   # Verify the hookify package can be imported
   run python3 -c "
 import sys
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$HOOKIFY_PATH')
+from core import load_rules, RuleEngine
 print('Import successful')
 "
   assert_success
@@ -32,13 +51,16 @@ print('Import successful')
 }
 
 @test "hookify integration: rules load from .claude directory" {
-  # Verify rules can be loaded
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
+  # Verify rules can be loaded (must run from project dir)
   run python3 -c "
 import sys
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules
+import os
+sys.path.insert(0, '$HOOKIFY_PATH')
+os.chdir('$REPO_ROOT')
+from core import load_rules
 
-rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
+rules = load_rules(event='bash')
 print(f'Loaded {len(rules)} bash rules')
 assert len(rules) > 0, 'No rules loaded'
 "
@@ -47,14 +69,17 @@ assert len(rules) > 0, 'No rules loaded'
 }
 
 @test "hookify integration: block action returns permissionDecision deny" {
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
   # Test that a blocking rule returns the correct JSON structure
   run python3 -c "
 import sys
+import os
 import json
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$HOOKIFY_PATH')
+os.chdir('$REPO_ROOT')
+from core import load_rules, RuleEngine
 
-rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
+rules = load_rules(event='bash')
 engine = RuleEngine()
 
 # Test a command that should be blocked
@@ -78,14 +103,17 @@ print('Block structure verified')
 }
 
 @test "hookify integration: warn action returns systemMessage only" {
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
   # Test that a warning rule returns systemMessage without denial
   run python3 -c "
 import sys
+import os
 import json
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$HOOKIFY_PATH')
+os.chdir('$REPO_ROOT')
+from core import load_rules, RuleEngine
 
-rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
+rules = load_rules(event='bash')
 engine = RuleEngine()
 
 # Test a command that should warn
@@ -108,14 +136,17 @@ print('Warn structure verified')
 }
 
 @test "hookify integration: allow returns empty dict" {
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
   # Test that a non-matching command returns empty dict
   run python3 -c "
 import sys
+import os
 import json
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$HOOKIFY_PATH')
+os.chdir('$REPO_ROOT')
+from core import load_rules, RuleEngine
 
-rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
+rules = load_rules(event='bash')
 engine = RuleEngine()
 
 # Test a command that should be allowed

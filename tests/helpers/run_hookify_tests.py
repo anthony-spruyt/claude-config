@@ -8,13 +8,36 @@ Uses the actual hookify implementation for accurate testing.
 import sys
 import os
 import argparse
+import glob
 
-# Add .claude/lib to path for shared hookify module
+# Add plugin core to path for hookify module
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(REPO_ROOT, ".claude", "lib"))
+
+def find_hookify_plugin():
+    """Find hookify plugin path - installed or local."""
+    # Check for installed hookify-plus plugin (preferred)
+    home = os.path.expanduser("~")
+    installed_patterns = [
+        os.path.join(home, ".claude/plugins/cache/hookify-plus-local/hookify-plus/*/"),
+        os.path.join(home, ".claude/plugins/cache/*/hookify-plus/*/"),
+        os.path.join(home, ".claude/plugins/cache/*/hookify/*/"),
+    ]
+    for pattern in installed_patterns:
+        matches = glob.glob(pattern)
+        if matches:
+            return max(matches)  # Latest version
+
+    # Fall back to local plugin in repo
+    local_path = os.path.join(REPO_ROOT, ".claude", "plugins", "hookify-extended")
+    if os.path.isdir(local_path):
+        return local_path
+
+    raise RuntimeError("No hookify plugin found. Install hookify-plus via /plugin or add local hookify-extended.")
+
+sys.path.insert(0, find_hookify_plugin())
 
 import yaml
-from common_hookify import load_rules, RuleEngine
+from core import load_rules, RuleEngine
 
 
 def get_result_type(result: dict) -> str:
@@ -40,76 +63,85 @@ def run_tests(config_path: str, rules_dir: str, verbose: bool = False) -> list:
 
     Args:
         config_path: Path to test cases YAML file
-        rules_dir: Directory containing hookify rules
+        rules_dir: Directory containing hookify rules (parent of .claude/)
         verbose: Print detailed output
 
     Returns:
         List of failure messages (empty if all passed)
     """
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
+    # Change to the rules directory so load_rules() finds .claude/
+    original_cwd = os.getcwd()
+    # rules_dir is the .claude directory, so go to its parent
+    project_dir = os.path.dirname(rules_dir) if rules_dir.endswith('.claude') else rules_dir
+    os.chdir(project_dir)
 
-    engine = RuleEngine()
-    failures = []
-    passed = 0
+    try:
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
 
-    for test in config.get('test_cases', []):
-        name = test.get('name', 'unnamed')
-        tool = test.get('tool', 'Bash')
-        expect = test.get('expect', 'allow')
+        engine = RuleEngine()
+        failures = []
+        passed = 0
 
-        # Build input JSON based on tool type
-        if tool == 'Bash':
-            input_data = {
-                "hook_event_name": "PreToolUse",
-                "tool_name": "Bash",
-                "tool_input": {"command": test.get('command', '')}
-            }
-        elif tool in ['Read', 'Edit', 'Write']:
-            input_data = {
-                "hook_event_name": "PreToolUse",
-                "tool_name": tool,
-                "tool_input": {
-                    "file_path": test.get('file_path', ''),
-                    "content": test.get('content', ''),
-                    "new_string": test.get('new_string', ''),
-                    "old_string": test.get('old_string', '')
+        for test in config.get('test_cases', []):
+            name = test.get('name', 'unnamed')
+            tool = test.get('tool', 'Bash')
+            expect = test.get('expect', 'allow')
+
+            # Build input JSON based on tool type
+            if tool == 'Bash':
+                input_data = {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "Bash",
+                    "tool_input": {"command": test.get('command', '')}
                 }
-            }
-        else:
-            input_data = {
-                "hook_event_name": "PreToolUse",
-                "tool_name": tool,
-                "tool_input": test.get('tool_input', {})
-            }
+            elif tool in ['Read', 'Edit', 'Write']:
+                input_data = {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": tool,
+                    "tool_input": {
+                        "file_path": test.get('file_path', ''),
+                        "content": test.get('content', ''),
+                        "new_string": test.get('new_string', ''),
+                        "old_string": test.get('old_string', '')
+                    }
+                }
+            else:
+                input_data = {
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": tool,
+                    "tool_input": test.get('tool_input', {})
+                }
 
-        # Determine event type for rule loading
-        event = "bash" if tool == "Bash" else "file"
+            # Determine event type for rule loading
+            event = "bash" if tool == "Bash" else "file"
 
-        # Load rules and evaluate (include disabled rules for testing)
-        rules = load_rules(event=event, rules_dir=rules_dir, include_disabled=True)
-        result = engine.evaluate_rules(rules, input_data)
+            # Load rules (hookify-plus uses cwd, not rules_dir param)
+            rules = load_rules(event=event)
+            result = engine.evaluate_rules(rules, input_data)
 
-        # Check expectation
-        actual = get_result_type(result)
+            # Check expectation
+            actual = get_result_type(result)
 
-        if actual != expect:
-            msg = f"FAIL: {name}: expected {expect}, got {actual}"
-            failures.append(msg)
-            if verbose:
-                print(f"\033[91m{msg}\033[0m")  # Red
-                print(f"  Input: {input_data}")
-                print(f"  Result: {result}")
-        else:
-            passed += 1
-            if verbose:
-                print(f"\033[92mPASS: {name}\033[0m")  # Green
+            if actual != expect:
+                msg = f"FAIL: {name}: expected {expect}, got {actual}"
+                failures.append(msg)
+                if verbose:
+                    print(f"\033[91m{msg}\033[0m")  # Red
+                    print(f"  Input: {input_data}")
+                    print(f"  Result: {result}")
+            else:
+                passed += 1
+                if verbose:
+                    print(f"\033[92mPASS: {name}\033[0m")  # Green
 
-    # Summary
-    total = passed + len(failures)
-    print(f"\n{passed}/{total} tests passed")
+        # Summary
+        total = passed + len(failures)
+        print(f"\n{passed}/{total} tests passed")
 
-    return failures
+        return failures
+    finally:
+        os.chdir(original_cwd)
 
 
 def main():
