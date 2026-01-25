@@ -41,6 +41,13 @@ jobs:
           bats --version
           ls -la /usr/local/lib/bats/
 
+      - name: Install hookify-plus plugin for testing
+        run: |
+          # Clone hookify-plus to the location tests expect
+          mkdir -p ~/.claude/plugins/cache/hookify-plus-local/hookify-plus
+          git clone --depth 1 https://github.com/anthony-spruyt/hookify-plus.git \
+            ~/.claude/plugins/cache/hookify-plus-local/hookify-plus/1.1.0
+
       - name: Run tests
         id: tests
         run: |
