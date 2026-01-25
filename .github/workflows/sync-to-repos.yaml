@@ -216,10 +216,26 @@ jobs:
           REPO="${TARGET_REPO#*/}"
 
           # Get base commit (try branch first, fall back to default branch)
-          BASE_SHA=$(gh api "repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH_NAME}" --jq '.object.sha' 2>/dev/null || \
-                     gh api "repos/${OWNER}/${REPO}/git/refs/heads/main" --jq '.object.sha' 2>/dev/null || \
-                     gh api "repos/${OWNER}/${REPO}/git/refs/heads/master" --jq '.object.sha')
+          get_ref_sha() {
+            local ref="$1"
+            local sha
+            sha=$(gh api "repos/${OWNER}/${REPO}/git/refs/heads/${ref}" --jq '.object.sha' 2>/dev/null) || return 1
+            # Validate it looks like a SHA (40 hex chars)
+            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] && echo "$sha" && return 0
+            return 1
+          }
+
+          BASE_SHA=$(get_ref_sha "$BRANCH_NAME" || get_ref_sha "main" || get_ref_sha "master")
+          if [[ -z "$BASE_SHA" ]]; then
+            echo "Error: Could not find base branch"
+            exit 1
+          fi
+
           BASE_TREE=$(gh api "repos/${OWNER}/${REPO}/git/commits/${BASE_SHA}" --jq '.tree.sha')
+          if [[ ! "$BASE_TREE" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Error: Could not get base tree from commit ${BASE_SHA}"
+            exit 1
+          fi
 
           echo "Base commit: $BASE_SHA"
           echo "Base tree: $BASE_TREE"
