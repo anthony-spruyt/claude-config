@@ -207,11 +207,12 @@ if ! is_category_excluded "plugins"; then
   echo "  Synced: plugins/*"
 fi
 
-# 8. Clean up legacy files (removed in favor of hookify-extended plugin)
+# 8. Clean up legacy files (now using hookify-plus from GitHub)
 echo "  Cleaning up legacy files..."
 rm -rf "$TARGET_DIR/.claude/lib/common_hookify" 2>/dev/null || true
 rm -f "$TARGET_DIR/.claude/hooks/common-hookify-bridge.py" 2>/dev/null || true
 rm -f "$TARGET_DIR/.claude/rules/common-hookify-bridge.md" 2>/dev/null || true
+rm -rf "$TARGET_DIR/.claude/plugins/hookify-extended" 2>/dev/null || true
 
 # 9. Sync commands/common-*.md (delete removed, add new)
 if ! is_category_excluded "commands"; then

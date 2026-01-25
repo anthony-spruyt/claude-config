@@ -1,10 +1,10 @@
 {
-  "includeCoAuthoredBy": true,
   "env": {
     "INSIDE_CLAUDE_CODE": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "420000",
     "BASH_MAX_TIMEOUT_MS": "420000"
   },
+  "includeCoAuthoredBy": true,
   "permissions": {
     "allow": [
       "Bash(gh issue comment:*)",
@@ -136,20 +136,14 @@
       }
     ]
   },
-  "extraKnownMarketplaces": {
-    "hookify-extended-local": {
-      "source": {
-        "source": "directory",
-        "path": ".claude/plugins/hookify-extended"
-      }
-    }
-  },
   "enabledPlugins": {
     "context7@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "code-review@claude-plugins-official": false,
     "hookify@claude-plugins-official": false,
-    "hookify-extended@hookify-extended-local": true
-  }
+    "hookify-plus@hookify-plus-fork": false,
+    "hookify-plus@hookify-plus-local": true
+  },
+  "extraKnownMarketplaces": {}
 }

@@ -57,19 +57,25 @@ This repository implements defense-in-depth with multiple security layers:
 
 3. **Hookify Rules** (`.claude/hookify.common-*.local.md`) - Event-based workflow automation and safety controls for Kubernetes operations, secret management, environment access, and workflow confirmation
 
-4. **Hookify-Extended Plugin** ([.claude/plugins/hookify-extended/](.claude/plugins/hookify-extended/)) - Extended version of official hookify that fixes [#12446](https://github.com/anthropics/claude-code/issues/12446) and adds rate-limited warnings
+4. **Hookify-Plus Plugin** ([anthony-spruyt/hookify-plus](https://github.com/anthony-spruyt/hookify-plus)) - Extended hookify that fixes [#12446](https://github.com/anthropics/claude-code/issues/12446) and adds rate-limited warnings
 
 **Complete list:** See [.claude/settings.json](.claude/settings.json) for file/command patterns and `.claude/hookify.common-*.local.md` files for active rules. All security layers are validated by automated tests in `tests/security/` and `tests/hooks/`.
 
-### Hookify-Extended Plugin
+### Hookify-Plus Plugin
 
-The official hookify plugin has a bug ([#12446](https://github.com/anthropics/claude-code/issues/12446)) where messages don't reach Claude. We created `hookify-extended` with fixes:
+The official hookify plugin has a bug ([#12446](https://github.com/anthropics/claude-code/issues/12446)) where messages don't reach Claude. We use [hookify-plus](https://github.com/anthony-spruyt/hookify-plus) with fixes:
+
+**Installation:**
+
+1. `/plugin` → Add plugin → `anthony-spruyt/hookify-plus`
+2. Restart Claude Code
+3. Hooks will fire on tool use
 
 **Features:**
 
 1. **Fix #12446** - Messages reach Claude via stderr + exit 2 (not stdout + exit 0)
 2. **Rate-limited warnings** - `warn_once` and `warn_interval` fields to reduce context waste
-3. **PPID-scoped state** - Subagents get independent warning state
+3. **Per-subagent state** - State resets when Task tool spawns subagents
 
 **Rate limiting fields:**
 
@@ -90,7 +96,7 @@ warn_interval: 5 # OR: warn every N matches
 | `warn_once`     | bool | false   | Only warn once per agent session      |
 | `warn_interval` | int  | 0       | Warn every N matches (0 = every time) |
 
-**State storage:** `/tmp/claude-hookify-state-{ppid}.json` with 24h TTL.
+**State storage:** `/tmp/claude-hookify-state-{session_id[:12]}.json` with 24h TTL.
 
 ### Pattern Matching Reference
 
@@ -219,12 +225,11 @@ exclude_files:
 
 - **[.claude/settings.json](.claude/settings.json)** - Core configuration:
   - Permission denials for sensitive files/commands
-  - PreToolUse/PostToolUse hooks (hookify-extended plugin)
+  - PreToolUse/PostToolUse hooks (hookify-plus plugin from GitHub)
   - PostToolUse hooks (auto-format with Prettier after edits)
-  - Enabled plugins: context7, security-guidance, feature-dev
+  - Enabled plugins: context7, security-guidance, feature-dev, hookify-plus
 
 - **`.claude/hookify.common-*.local.md`** - Shared hookify rules (synced from central config)
-- **`.claude/plugins/hookify-extended/`** - Extended hookify with rate limiting
 - **`.claude/rules/common-*.md`** - Shared Claude Code rules (synced from central config)
 - **`.claude/agents/common-*.md`** - Shared agents (synced from central config)
 - **`.claude/commands/common-*.md`** - Shared slash commands (synced from central config)
@@ -286,18 +291,17 @@ Text instructions (like "NEVER delete files") are often ignored by agents. Use `
 
 Files use a `common-` prefix to distinguish centrally-managed config from repo-specific config:
 
-| Pattern                                  | Source                  | Example                                    |
-| ---------------------------------------- | ----------------------- | ------------------------------------------ |
-| `hookify.common-*.local.md`              | Central (synced)        | `hookify.common-block-secrets.local.md`    |
-| `hookify.*.local.md` (without `common-`) | Repo-specific           | `hookify.my-project-rule.local.md`         |
-| `plugins/hookify-extended/`              | Central (synced)        | Hookify-extended plugin with rate limiting |
-| `agents/common-*.md`                     | Central (synced)        | `agents/common-security-agent.md`          |
-| `agents/*.md` (without `common-`)        | Repo-specific           | `agents/my-project-agent.md`               |
-| `rules/common-*.md`                      | Central (synced)        | `rules/common-code-style.md`               |
-| `rules/*.md` (without `common-`)         | Repo-specific           | `rules/my-project-rules.md`                |
-| `commands/common-*.md`                   | Central (synced)        | `commands/common-debug.md`                 |
-| `commands/*.md` (without `common-`)      | Repo-specific           | `commands/my-deploy.md`                    |
-| `settings.json`                          | Central (always synced) | Always overwritten                         |
+| Pattern                                  | Source                  | Example                                 |
+| ---------------------------------------- | ----------------------- | --------------------------------------- |
+| `hookify.common-*.local.md`              | Central (synced)        | `hookify.common-block-secrets.local.md` |
+| `hookify.*.local.md` (without `common-`) | Repo-specific           | `hookify.my-project-rule.local.md`      |
+| `agents/common-*.md`                     | Central (synced)        | `agents/common-security-agent.md`       |
+| `agents/*.md` (without `common-`)        | Repo-specific           | `agents/my-project-agent.md`            |
+| `rules/common-*.md`                      | Central (synced)        | `rules/common-code-style.md`            |
+| `rules/*.md` (without `common-`)         | Repo-specific           | `rules/my-project-rules.md`             |
+| `commands/common-*.md`                   | Central (synced)        | `commands/common-debug.md`              |
+| `commands/*.md` (without `common-`)      | Repo-specific           | `commands/my-deploy.md`                 |
+| `settings.json`                          | Central (always synced) | Always overwritten                      |
 
 **Important:** The sync script only manages files with the `common-` prefix. Repo-specific files (without the prefix) are never modified or deleted by sync.
 
@@ -311,7 +315,7 @@ Uses **bats-core** for testing. Run: `./test.sh`
 - `tests/commands/` - Command file format validation (frontmatter, required fields)
 - `tests/agents/` - Agent file format validation (frontmatter, model field)
 
-**Hookify tests:** Add test cases to [tests/hooks/hookify_test_cases.yaml](tests/hooks/hookify_test_cases.yaml) with expected outcome (block/warn/allow). Tests use the hookify-extended plugin from `.claude/plugins/hookify-extended/`.
+**Hookify tests:** Add test cases to [tests/hooks/hookify_test_cases.yaml](tests/hooks/hookify_test_cases.yaml) with expected outcome (block/warn/allow). Tests use the installed hookify-plus plugin (install via `/plugin` → `anthony-spruyt/hookify-plus`).
 
 **Python dependencies** (installed by devcontainer/CI): `pathspec`, `pyyaml`
 
