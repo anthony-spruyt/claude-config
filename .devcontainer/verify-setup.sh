@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# This file is automatically updated - do not modify directly
+
 # Devcontainer setup verification tests
 
 PASSED=0
@@ -15,7 +17,6 @@ fail() {
   echo "✗ $1"
   FAILED=$((FAILED + 1))
 }
-
 
 echo "Running devcontainer verification tests..."
 echo ""
@@ -57,6 +58,7 @@ else
 fi
 
 # 5. SSH agent forwarding
+# shellcheck disable=SC2157 # xfg template syntax $${} appears as literal to shellcheck
 if [[ -n "${SSH_AUTH_SOCK:-}" ]] && ssh-add -l &>/dev/null 2>&1; then
   pass "SSH agent has keys loaded"
 else
@@ -68,13 +70,6 @@ if command -v claude &>/dev/null; then
   pass "Claude Code CLI is installed"
 else
   fail "Claude Code CLI is not installed"
-fi
-
-# 7. Python pathspec for gitignore pattern matching in tests
-if python3 -c "import pathspec" &>/dev/null; then
-  pass "Python pathspec is installed"
-else
-  fail "Python pathspec is not installed (run: pip3 install pathspec)"
 fi
 
 echo ""

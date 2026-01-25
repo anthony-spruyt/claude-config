@@ -1,7 +1,11 @@
 {
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
   "name": "Ubuntu",
   "image": "mcr.microsoft.com/devcontainers/base:jammy",
-  "runArgs": ["--env-file", "${localEnv:HOME}/.secrets/.env"],
+  "runArgs": [
+    "--env-file",
+    "${localEnv:HOME}/.secrets/.env"
+  ],
   "mounts": [
     "source=${localEnv:HOME}/.ssh/agent.sock,target=/ssh-agent,type=bind",
     "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind",
@@ -22,13 +26,12 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "redhat.vscode-yaml",
-        "mhutchie.git-graph",
-        "esbenp.prettier-vscode",
         "anthropic.claude-code",
-        "jetmartin.bats",
         "bierner.markdown-mermaid",
-        "github.vscode-github-actions"
+        "blueglassblock.better-json5",
+        "esbenp.prettier-vscode",
+        "mhutchie.git-graph",
+        "redhat.vscode-yaml"
       ]
     }
   }
