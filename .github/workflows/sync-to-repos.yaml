@@ -174,14 +174,14 @@ jobs:
           repositories: ${{ matrix.repo_name }}
 
       - name: Checkout target repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ matrix.repo }}
           token: ${{ steps.app-token.outputs.token }}
           path: target
 
       - name: Checkout config source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: _config_source
 
