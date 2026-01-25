@@ -272,8 +272,9 @@ jobs:
             [ -z "$file" ] && continue
             # Only delete if file exists in base tree
             if echo "$BASE_TREE_FILES" | jq -e --arg path "$file" 'index($path) != null' > /dev/null; then
+              # For deletions, only path and sha:null are needed (no mode/type)
               TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq --arg path "$file" \
-                '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": null}]')
+                '. + [{"path": $path, "sha": null}]')
               echo "  Will delete: $file"
             else
               echo "  Skip delete (not in tree): $file"
@@ -282,11 +283,13 @@ jobs:
 
           echo "Tree entries: $(echo "$TREE_ENTRIES" | jq length)"
 
+          # Debug: show tree entries JSON
+          echo "Tree JSON:"
+          echo "$TREE_ENTRIES" | jq --arg base "$BASE_TREE" '{base_tree: $base, tree: .}'
+
           # Create new tree
-          NEW_TREE=$(gh api "repos/${OWNER}/${REPO}/git/trees" \
-            --field base_tree="$BASE_TREE" \
-            --input <(echo "$TREE_ENTRIES" | jq '{tree: .}') \
-            --jq '.sha')
+          TREE_REQUEST=$(echo "$TREE_ENTRIES" | jq --arg base "$BASE_TREE" '{base_tree: $base, tree: .}')
+          NEW_TREE=$(echo "$TREE_REQUEST" | gh api "repos/${OWNER}/${REPO}/git/trees" --input - --jq '.sha')
 
           echo "New tree: $NEW_TREE"
 
