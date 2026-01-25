@@ -43,6 +43,9 @@ class Rule:
     tool_matcher: Optional[str] = None  # Override tool matching
     message: str = ""  # Message body from markdown
     bridge_enabled: bool = True  # If true + enabled=false, bridge handles this rule
+    # Rate limiting fields
+    warn_once: bool = False  # Only warn once per session
+    warn_interval: int = 0  # Warn every N matches (0 = every time)
 
     @classmethod
     def from_dict(cls, frontmatter: Dict[str, Any], message: str) -> 'Rule':
@@ -75,6 +78,14 @@ class Rule:
                 pattern=simple_pattern
             )]
 
+        # Parse warn_interval as int
+        warn_interval = frontmatter.get('warn_interval', 0)
+        if isinstance(warn_interval, str):
+            try:
+                warn_interval = int(warn_interval)
+            except ValueError:
+                warn_interval = 0
+
         return cls(
             name=frontmatter.get('name', 'unnamed'),
             enabled=frontmatter.get('enabled', True),
@@ -84,7 +95,9 @@ class Rule:
             action=frontmatter.get('action', 'warn'),
             tool_matcher=frontmatter.get('tool_matcher'),
             message=message.strip(),
-            bridge_enabled=frontmatter.get('bridgeEnabled', True)  # Default true for backwards compat
+            bridge_enabled=frontmatter.get('bridgeEnabled', True),  # Default true for backwards compat
+            warn_once=frontmatter.get('warn_once', False),
+            warn_interval=warn_interval,
         )
 
 

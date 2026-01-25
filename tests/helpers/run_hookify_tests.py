@@ -9,12 +9,12 @@ import sys
 import os
 import argparse
 
-# Add .claude/lib to path for shared hookify module
+# Add plugin core to path for hookify module
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(REPO_ROOT, ".claude", "lib"))
+sys.path.insert(0, os.path.join(REPO_ROOT, ".claude", "plugins", "hookify-extended"))
 
 import yaml
-from common_hookify import load_rules, RuleEngine
+from core import load_rules, RuleEngine
 
 
 def get_result_type(result: dict) -> str:

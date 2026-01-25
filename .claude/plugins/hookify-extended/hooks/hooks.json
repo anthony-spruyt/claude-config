@@ -1,0 +1,33 @@
+{
+  "description": "Hookify-extended - User-configurable hooks with rate limiting",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/pretooluse.py",
+        "timeout": 10000
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/posttooluse.py",
+        "timeout": 10000
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/stop.py",
+        "timeout": 10000
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "type": "command",
+        "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/userpromptsubmit.py",
+        "timeout": 10000
+      }
+    ]
+  }
+}

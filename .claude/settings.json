@@ -124,36 +124,7 @@
     ]
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/common-hookify-bridge.py\""
-          }
-        ]
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/common-hookify-bridge.py\""
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/common-hookify-bridge.py\" --post"
-          }
-        ]
-      },
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
@@ -165,11 +136,20 @@
       }
     ]
   },
+  "extraKnownMarketplaces": {
+    "hookify-extended-local": {
+      "source": {
+        "source": "directory",
+        "path": ".claude/plugins/hookify-extended"
+      }
+    }
+  },
   "enabledPlugins": {
     "context7@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "code-review@claude-plugins-official": false,
-    "hookify@claude-plugins-official": true
+    "hookify@claude-plugins-official": false,
+    "hookify-extended@hookify-extended-local": true
   }
 }

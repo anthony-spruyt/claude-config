@@ -1,0 +1,16 @@
+{
+  "name": "hookify-extended-marketplace",
+  "description": "Local marketplace for hookify-extended plugin",
+  "plugins": [
+    {
+      "id": "hookify-extended",
+      "name": "Hookify Extended",
+      "description": "Fork of hookify with rate-limited warnings and proper Claude message delivery",
+      "version": "1.0.0",
+      "source": {
+        "type": "directory",
+        "path": "."
+      }
+    }
+  ]
+}
