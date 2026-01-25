@@ -28,6 +28,7 @@ find_hookify_plugin() {
 HOOKIFY_PATH=$(find_hookify_plugin)
 
 @test "hookify integration: all test cases pass" {
+  [[ -n "$HOOKIFY_PATH" ]] || skip "hookify-plus plugin not installed"
   # Run the Python test runner with the test cases YAML
   run python3 "$REPO_ROOT/tests/helpers/run_hookify_tests.py" \
       "$REPO_ROOT/tests/hooks/hookify_test_cases.yaml" \
