@@ -264,11 +264,20 @@ jobs:
             fi
           done < <(git diff --cached --name-only --diff-filter=AM)
 
-          # Process deletions (sha: null removes from tree)
+          # Get list of files in base tree (to check if deletions are valid)
+          BASE_TREE_FILES=$(gh api "repos/${OWNER}/${REPO}/git/trees/${BASE_TREE}?recursive=1" --jq '[.tree[].path]')
+
+          # Process deletions (sha: null removes from tree, but only if file exists)
           while IFS= read -r file; do
             [ -z "$file" ] && continue
-            TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq --arg path "$file" \
-              '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": null}]')
+            # Only delete if file exists in base tree
+            if echo "$BASE_TREE_FILES" | jq -e --arg path "$file" 'index($path) != null' > /dev/null; then
+              TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq --arg path "$file" \
+                '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": null}]')
+              echo "  Will delete: $file"
+            else
+              echo "  Skip delete (not in tree): $file"
+            fi
           done < <(git diff --cached --name-only --diff-filter=D)
 
           echo "Tree entries: $(echo "$TREE_ENTRIES" | jq length)"
