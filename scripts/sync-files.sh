@@ -185,7 +185,13 @@ if ! is_category_excluded "lib"; then
   echo "  Synced: lib/common_*"
 fi
 
-# 7. Sync commands/common-*.md (delete removed, add new)
+# 7. Clean up legacy files (hookify-plus is now loaded from GitHub, not local)
+echo "  Cleaning up legacy files..."
+rm -rf "$TARGET_DIR/.claude/lib/common_hookify" 2>/dev/null || true
+rm -f "$TARGET_DIR/.claude/hooks/common-hookify-bridge.py" 2>/dev/null || true
+rm -f "$TARGET_DIR/.claude/rules/common-hookify-bridge.md" 2>/dev/null || true
+
+# 8. Sync commands/common-*.md (delete removed, add new)
 if ! is_category_excluded "commands"; then
   for f in "$TARGET_DIR"/.claude/commands/common-*.md; do
     [ -e "$f" ] || continue

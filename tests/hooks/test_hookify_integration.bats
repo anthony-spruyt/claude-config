@@ -23,8 +23,8 @@ REPO_ROOT="${REPO_ROOT:-/workspaces/claude-config}"
   # Verify the hookify package can be imported
   run python3 -c "
 import sys
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$REPO_ROOT/hookify-plus')
+from core import load_rules, RuleEngine
 print('Import successful')
 "
   assert_success
@@ -35,8 +35,8 @@ print('Import successful')
   # Verify rules can be loaded
   run python3 -c "
 import sys
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules
+sys.path.insert(0, '$REPO_ROOT/hookify-plus')
+from core import load_rules
 
 rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
 print(f'Loaded {len(rules)} bash rules')
@@ -51,8 +51,8 @@ assert len(rules) > 0, 'No rules loaded'
   run python3 -c "
 import sys
 import json
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$REPO_ROOT/hookify-plus')
+from core import load_rules, RuleEngine
 
 rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
 engine = RuleEngine()
@@ -82,8 +82,8 @@ print('Block structure verified')
   run python3 -c "
 import sys
 import json
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$REPO_ROOT/hookify-plus')
+from core import load_rules, RuleEngine
 
 rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
 engine = RuleEngine()
@@ -112,8 +112,8 @@ print('Warn structure verified')
   run python3 -c "
 import sys
 import json
-sys.path.insert(0, '$REPO_ROOT/.claude/lib')
-from common_hookify import load_rules, RuleEngine
+sys.path.insert(0, '$REPO_ROOT/hookify-plus')
+from core import load_rules, RuleEngine
 
 rules = load_rules(event='bash', rules_dir='$REPO_ROOT/.claude', include_disabled=True)
 engine = RuleEngine()
