@@ -203,21 +203,96 @@ jobs:
           cd _config_source
           echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Create verified commit
+      - name: Create verified commit with deletions
         if: steps.sync.outputs.changed == 'true'
-        uses: iarekylew00t/verified-bot-commit@v2
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ matrix.repo }}
-          ref: refs/heads/chore/update-claude-config
-          workspace: target
-          message: |
-            chore(config): update Claude config
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_REPO: ${{ matrix.repo }}
+          CONFIG_REPO: ${{ github.repository }}
+        run: |
+          cd target
+          BRANCH_NAME="chore/update-claude-config"
+          OWNER="${TARGET_REPO%%/*}"
+          REPO="${TARGET_REPO#*/}"
 
-            Updated configuration from ${{ github.repository }}.
-          files: .claude/**
-          force-push: true
-          if-no-commit: info
+          # Get base commit (try branch first, fall back to default branch)
+          BASE_SHA=$(gh api "repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH_NAME}" --jq '.object.sha' 2>/dev/null || \
+                     gh api "repos/${OWNER}/${REPO}/git/refs/heads/main" --jq '.object.sha' 2>/dev/null || \
+                     gh api "repos/${OWNER}/${REPO}/git/refs/heads/master" --jq '.object.sha')
+          BASE_TREE=$(gh api "repos/${OWNER}/${REPO}/git/commits/${BASE_SHA}" --jq '.tree.sha')
+
+          echo "Base commit: $BASE_SHA"
+          echo "Base tree: $BASE_TREE"
+
+          # Build tree entries from staged changes
+          TREE_ENTRIES="[]"
+
+          # Process staged files (additions and modifications)
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            if [ -f "$file" ]; then
+              # File exists - create blob and add to tree
+              CONTENT=$(base64 -w0 "$file")
+              BLOB_SHA=$(gh api "repos/${OWNER}/${REPO}/git/blobs" \
+                -f content="$CONTENT" \
+                -f encoding="base64" \
+                --jq '.sha')
+              # Get file mode (100644 for regular, 100755 for executable)
+              if [ -x "$file" ]; then
+                MODE="100755"
+              else
+                MODE="100644"
+              fi
+              TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq --arg path "$file" --arg sha "$BLOB_SHA" --arg mode "$MODE" \
+                '. + [{"path": $path, "mode": $mode, "type": "blob", "sha": $sha}]')
+            fi
+          done < <(git diff --cached --name-only --diff-filter=AM)
+
+          # Process deletions (sha: null removes from tree)
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq --arg path "$file" \
+              '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": null}]')
+          done < <(git diff --cached --name-only --diff-filter=D)
+
+          echo "Tree entries: $(echo "$TREE_ENTRIES" | jq length)"
+
+          # Create new tree
+          NEW_TREE=$(gh api "repos/${OWNER}/${REPO}/git/trees" \
+            --field base_tree="$BASE_TREE" \
+            --input <(echo "$TREE_ENTRIES" | jq '{tree: .}') \
+            --jq '.sha')
+
+          echo "New tree: $NEW_TREE"
+
+          # Create commit (signed automatically when using App token)
+          COMMIT_MSG="chore(config): update Claude config
+
+          Updated configuration from ${CONFIG_REPO}."
+
+          NEW_COMMIT=$(gh api "repos/${OWNER}/${REPO}/git/commits" \
+            -f message="$COMMIT_MSG" \
+            -f tree="$NEW_TREE" \
+            -f "parents[]=$BASE_SHA" \
+            --jq '.sha')
+
+          echo "New commit: $NEW_COMMIT"
+
+          # Update or create branch ref
+          if gh api "repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH_NAME}" --silent 2>/dev/null; then
+            # Branch exists - update it
+            gh api "repos/${OWNER}/${REPO}/git/refs/heads/${BRANCH_NAME}" \
+              -X PATCH \
+              -f sha="$NEW_COMMIT" \
+              -F force=true
+          else
+            # Branch doesn't exist - create it
+            gh api "repos/${OWNER}/${REPO}/git/refs" \
+              -f ref="refs/heads/${BRANCH_NAME}" \
+              -f sha="$NEW_COMMIT"
+          fi
+
+          echo "Branch ${BRANCH_NAME} updated to ${NEW_COMMIT}"
 
       - name: Create or update PR
         if: steps.sync.outputs.changed == 'true'
