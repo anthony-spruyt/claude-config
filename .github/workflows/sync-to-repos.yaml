@@ -271,7 +271,7 @@ jobs:
           while IFS= read -r file; do
             [ -z "$file" ] && continue
             # Only delete if file exists in base tree
-            if echo "$BASE_TREE_FILES" | jq -e --arg path "$file" 'index($path) != null' > /dev/null; then
+            if echo "$BASE_TREE_FILES" | jq -e --arg path "$file" 'any(. == $path)' > /dev/null; then
               # For deletions, only path and sha:null are needed (no mode/type)
               TREE_ENTRIES=$(echo "$TREE_ENTRIES" | jq --arg path "$file" \
                 '. + [{"path": $path, "sha": null}]')
