@@ -1,8 +1,6 @@
 # Claude Config
 
-![Sync](https://github.com/anthony-spruyt/claude-config/actions/workflows/sync-to-repos.yaml/badge.svg)
-![Tests](https://github.com/anthony-spruyt/claude-config/actions/workflows/test.yaml/badge.svg)
-![Lint](https://github.com/anthony-spruyt/claude-config/actions/workflows/lint.yaml/badge.svg)
+![CI](https://github.com/anthony-spruyt/claude-config/actions/workflows/ci.yaml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Centralized Claude Code configuration with security-focused distribution across repositories.
