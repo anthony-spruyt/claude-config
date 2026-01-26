@@ -1,10 +1,12 @@
 name: Sync to Target Repos
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".claude/**"
+  workflow_call:
+    inputs:
+      target_repos:
+        description: "Comma-separated repos to sync (e.g., owner/repo1,owner/repo2). Empty = all repos."
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       target_repos:

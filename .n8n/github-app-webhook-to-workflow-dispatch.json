@@ -12,7 +12,10 @@
       "name": "GitHub App Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [3264, 752],
+      "position": [
+        3264,
+        752
+      ],
       "webhookId": "github-app-installation"
     },
     {
@@ -61,7 +64,10 @@
       "name": "Filter Events",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
-      "position": [4160, 656]
+      "position": [
+        4160,
+        656
+      ]
     },
     {
       "parameters": {
@@ -108,7 +114,10 @@
       "name": "Filter Actions",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
-      "position": [4384, 656]
+      "position": [
+        4384,
+        656
+      ]
     },
     {
       "parameters": {
@@ -118,7 +127,10 @@
       "name": "Extract Target Repos",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4608, 656]
+      "position": [
+        4608,
+        656
+      ]
     },
     {
       "parameters": {
@@ -150,7 +162,10 @@
       "name": "Trigger Workflow Dispatch",
       "type": "n8n-nodes-base.github",
       "typeVersion": 1.1,
-      "position": [4832, 656],
+      "position": [
+        4832,
+        656
+      ],
       "credentials": {
         "githubOAuth2Api": {
           "id": "YOUR_CREDENTIAL_ID",
@@ -168,7 +183,10 @@
       "id": "respond-200",
       "name": "Respond 200 OK",
       "type": "n8n-nodes-base.respondToWebhook",
-      "position": [3936, 656],
+      "position": [
+        3936,
+        656
+      ],
       "typeVersion": 1.4
     },
     {
@@ -181,7 +199,10 @@
       "id": "respond-401",
       "name": "Respond 401 Unauthorized",
       "type": "n8n-nodes-base.respondToWebhook",
-      "position": [3936, 848],
+      "position": [
+        3936,
+        848
+      ],
       "typeVersion": 1.4
     },
     {
@@ -195,7 +216,10 @@
       "id": "compute-hmac",
       "name": "Compute HMAC256",
       "type": "n8n-nodes-base.crypto",
-      "position": [3488, 752],
+      "position": [
+        3488,
+        752
+      ],
       "typeVersion": 1
     },
     {
@@ -225,7 +249,10 @@
       "id": "validate-hmac",
       "name": "Validate HMAC256",
       "type": "n8n-nodes-base.if",
-      "position": [3712, 752],
+      "position": [
+        3712,
+        752
+      ],
       "typeVersion": 2.2
     },
     {
@@ -235,7 +262,10 @@
       "id": "stop-error",
       "name": "Stop and Error",
       "type": "n8n-nodes-base.stopAndError",
-      "position": [4160, 848],
+      "position": [
+        4160,
+        848
+      ],
       "typeVersion": 1
     }
   ],
@@ -286,7 +316,9 @@
       ]
     },
     "Trigger Workflow Dispatch": {
-      "main": [[]]
+      "main": [
+        []
+      ]
     },
     "Respond 200 OK": {
       "main": [
