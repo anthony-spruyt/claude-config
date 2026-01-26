@@ -1,0 +1,10 @@
+[MASTER]
+# Ignore import errors for hookify plugin modules (runtime dependency)
+# The 'core' module comes from the installed hookify-plus plugin
+ignored-modules=core
+
+[MESSAGES CONTROL]
+# E0401: Unable to import - hookify 'core' module is a runtime plugin dependency
+# C0413: wrong-import-position - imports must be after sys.path modification for plugin loading
+# R0914: too-many-locals - test runner function needs many variables
+disable=import-error,wrong-import-position,too-many-locals
