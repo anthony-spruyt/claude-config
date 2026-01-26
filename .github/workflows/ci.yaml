@@ -32,6 +32,7 @@ jobs:
       - "test"
     # Only run on push to main
     if: "github.event_name == 'push'"
+    secrets: "inherit"
 
   # Summary job for branch protection - add jobs to 'needs' array
   summary:
