@@ -32,7 +32,9 @@ def find_hookify_plugin():
     if os.path.isdir(local_path):
         return local_path
 
-    raise RuntimeError("No hookify plugin found. Install hookify-plus via /plugin or add local hookify-extended.")
+    raise RuntimeError(
+        "No hookify plugin found. Install hookify-plus via /plugin."
+    )
 
 sys.path.insert(0, find_hookify_plugin())
 
@@ -76,7 +78,7 @@ def run_tests(config_path: str, rules_dir: str, verbose: bool = False) -> list:
     os.chdir(project_dir)
 
     try:
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         engine = RuleEngine()
@@ -145,6 +147,7 @@ def run_tests(config_path: str, rules_dir: str, verbose: bool = False) -> list:
 
 
 def main():
+    """CLI entry point for running hookify tests."""
     parser = argparse.ArgumentParser(description='Run hookify test cases')
     parser.add_argument('config', help='Path to test cases YAML file')
     parser.add_argument('--rules-dir', '-r', default='.claude',
