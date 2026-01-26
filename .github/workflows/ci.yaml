@@ -1,6 +1,8 @@
+---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-workflow.json
-
+# See https://github.com/anthony-spruyt/repo-operator/blob/main/src/templates/.github/workflows/ci.yaml for template comments
 name: "CI"
+
 on:
   pull_request:
     branches:
@@ -8,15 +10,34 @@ on:
   push:
     branches:
       - "main"
+  # workflow_dispatch:  # Uncomment to enable manual runs
+
 permissions:
   contents: "write"
   pull-requests: "write"
+  statuses: "write"
+
 jobs:
   lint:
     uses: "anthony-spruyt/repo-operator/.github/workflows/_lint.yaml@main"
     secrets: "inherit"
+
+  test:
+    uses: "./.github/workflows/_test.yaml"
+
+  sync-to-repos:
+    uses: "./.github/workflows/sync-to-repos.yaml"
+    needs:
+      - "lint"
+      - "test"
+    # Only run on push to main
+    if: "github.event_name == 'push'"
+
+  # Summary job for branch protection - add jobs to 'needs' array
   summary:
     needs:
       - "lint"
+      - "test"
+      - "sync-to-repos"
     if: "always()"
     uses: "anthony-spruyt/repo-operator/.github/workflows/_summary.yaml@main"
