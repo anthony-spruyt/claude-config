@@ -327,9 +327,10 @@ Configuration: [.mega-linter.yml](.mega-linter.yml). Run locally with `./lint.sh
 
 ### GitHub Actions
 
-- [test.yaml](.github/workflows/test.yaml) - Test suite on push/PR
-- [lint.yaml](.github/workflows/lint.yaml) - MegaLinter on push/PR
+- [ci.yaml](.github/workflows/ci.yaml) - Orchestrates lint, test, and sync jobs (uses repo-operator)
+- [\_test.yaml](.github/workflows/_test.yaml) - Local reusable test workflow
 - [sync-to-repos.yaml](.github/workflows/sync-to-repos.yaml) - Auto-syncs `.claude/` to target repos
+- [trivy-scan.yaml](.github/workflows/trivy-scan.yaml) - Vulnerability scanning
 
 ### Dependabot
 
