@@ -40,7 +40,7 @@ if [ ! -d "$TARGET_DIR" ]; then
 fi
 
 # Check for yq (YAML parser) - needed for exclusion config
-if command -v yq &> /dev/null; then
+if command -v yq &>/dev/null; then
   YQ_AVAILABLE=true
 else
   YQ_AVAILABLE=false
@@ -72,11 +72,11 @@ is_file_excluded() {
 
 # Ensure target has .claude directory structure
 mkdir -p "$TARGET_DIR/.claude/agents" \
-         "$TARGET_DIR/.claude/rules" \
-         "$TARGET_DIR/.claude/hooks" \
-         "$TARGET_DIR/.claude/lib" \
-         "$TARGET_DIR/.claude/commands" \
-         "$TARGET_DIR/.claude/plugins"
+  "$TARGET_DIR/.claude/rules" \
+  "$TARGET_DIR/.claude/hooks" \
+  "$TARGET_DIR/.claude/lib" \
+  "$TARGET_DIR/.claude/commands" \
+  "$TARGET_DIR/.claude/plugins"
 
 # Load exclusions from target repo (if config exists)
 SYNC_CONFIG="$TARGET_DIR/.claude/.sync-config.yaml"
@@ -242,7 +242,7 @@ if git diff --cached --quiet .claude/; then
       echo "changed=false"
       echo "diff_stat="
       echo "changed_files="
-    } >> "$GITHUB_OUTPUT"
+    } >>"$GITHUB_OUTPUT"
   fi
   exit 0
 fi
@@ -266,7 +266,7 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
     echo "changed_files<<EOF_CHANGED_FILES"
     echo "$CHANGED_FILES"
     echo "EOF_CHANGED_FILES"
-  } >> "$GITHUB_OUTPUT"
+  } >>"$GITHUB_OUTPUT"
 fi
 
 exit 0
