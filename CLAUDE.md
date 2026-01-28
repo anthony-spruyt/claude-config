@@ -332,10 +332,6 @@ Configuration: [.mega-linter.yml](.mega-linter.yml). Run locally with `./lint.sh
 - [sync-to-repos.yaml](.github/workflows/sync-to-repos.yaml) - Auto-syncs `.claude/` to target repos
 - [trivy-scan.yaml](.github/workflows/trivy-scan.yaml) - Vulnerability scanning
 
-### Dependabot
-
-See [.github/dependabot.yml](.github/dependabot.yml) for auto-updates (Actions, npm, devcontainer).
-
 ## Devcontainer
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for devcontainer setup and SSH agent configuration.
