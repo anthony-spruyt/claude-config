@@ -293,26 +293,6 @@ teardown() {
   assert_output --partial "denied"
 }
 
-# Token and Secret Tests
-
-@test "blocks reading token files" {
-  local test_file="$TEST_DIR/github-token.txt"
-  echo "ghp_1234567890" > "$test_file"
-
-  run check_file_would_be_denied "$test_file"
-  assert_success
-  assert_output --partial "denied"
-}
-
-@test "blocks reading secret files" {
-  local test_file="$TEST_DIR/app-secret.txt"
-  echo "super-secret" > "$test_file"
-
-  run check_file_would_be_denied "$test_file"
-  assert_success
-  assert_output --partial "denied"
-}
-
 # Negative Tests - Files that should NOT be blocked
 # Note: These test that the SPECIFIC patterns wouldn't match safe files
 # The broad *secret* and *token* patterns are tested by the hookify rules
