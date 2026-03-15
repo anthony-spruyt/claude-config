@@ -7,3 +7,7 @@ https://www.conventionalcommits.org/.*
 
 # Shell variables in workflow files get URL-encoded as %7B (for {)
 .*%7B.*
+
+# GitHub rate-limits unauthenticated requests (429 Too Many Requests)
+https://github.com/.*
+https://raw.githubusercontent.com/.*
