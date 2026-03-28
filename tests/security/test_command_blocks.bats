@@ -19,17 +19,17 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 @test "base64 -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "base64 -d secret.txt"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "base64 --decode not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "base64 --decode secret.txt"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "base64 -D not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "base64 -D secret.txt"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows base64 encode" {
@@ -46,12 +46,12 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 @test "openssl enc -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "openssl enc -d -aes-256-cbc -in encrypted.bin"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "openssl pkcs12 not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "openssl pkcs12 -in cert.p12"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows openssl genrsa (key generation)" {
@@ -68,12 +68,12 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 @test "gpg -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "gpg -d encrypted.gpg"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "gpg --decrypt not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "gpg --decrypt encrypted.gpg"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows gpg encrypt" {
@@ -90,12 +90,12 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 @test "printenv not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "printenv"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "printenv with variable not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "printenv SECRET_KEY"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows echo (not printenv)" {
@@ -107,22 +107,22 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 @test "sops -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops -d secrets.yaml"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "sops --decrypt not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops --decrypt secrets.yaml"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "sops exec-env not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops exec-env secrets.yaml 'printenv'"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "sops exec-file not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "sops exec-file secrets.yaml 'cat {}'"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows sops --version" {
@@ -144,12 +144,12 @@ SETTINGS_FILE="$REPO_ROOT/.claude/settings.json"
 
 @test "age -d not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "age -d encrypted.age"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "age --decrypt not in settings.json deny (blocked by hookify)" {
   run check_command_blocked "age --decrypt encrypted.age"
-  assert_failure  # Not in settings.json - hookify handles with guidance
+  assert_failure # Not in settings.json - hookify handles with guidance
 }
 
 @test "allows age encrypt" {
