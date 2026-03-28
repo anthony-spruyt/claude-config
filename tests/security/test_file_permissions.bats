@@ -30,7 +30,7 @@ teardown() {
 @test "blocks reading id_rsa files" {
   local test_file="$TEST_DIR/.ssh/id_rsa"
   mkdir -p "$TEST_DIR/.ssh"
-  echo "fake-key" > "$test_file"
+  echo "fake-key" >"$test_file"
 
   # Check if this file would be denied by ANY pattern in settings.json
   run check_file_would_be_denied "$test_file"
@@ -41,7 +41,7 @@ teardown() {
 @test "blocks reading id_ed25519 files" {
   local test_file="$TEST_DIR/.ssh/id_ed25519"
   mkdir -p "$TEST_DIR/.ssh"
-  echo "fake-key" > "$test_file"
+  echo "fake-key" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -51,7 +51,7 @@ teardown() {
 @test "blocks reading id_ecdsa files" {
   local test_file="$TEST_DIR/.ssh/id_ecdsa"
   mkdir -p "$TEST_DIR/.ssh"
-  echo "fake-key" > "$test_file"
+  echo "fake-key" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -62,7 +62,7 @@ teardown() {
 
 @test "blocks reading .pem files" {
   local test_file="$TEST_DIR/cert.pem"
-  echo "fake-cert" > "$test_file"
+  echo "fake-cert" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -71,7 +71,7 @@ teardown() {
 
 @test "blocks reading .key files" {
   local test_file="$TEST_DIR/private.key"
-  echo "fake-key" > "$test_file"
+  echo "fake-key" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -80,7 +80,7 @@ teardown() {
 
 @test "blocks reading .p12 files" {
   local test_file="$TEST_DIR/cert.p12"
-  echo "fake-cert" > "$test_file"
+  echo "fake-cert" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -89,7 +89,7 @@ teardown() {
 
 @test "blocks reading .pfx files" {
   local test_file="$TEST_DIR/cert.pfx"
-  echo "fake-cert" > "$test_file"
+  echo "fake-cert" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -98,7 +98,7 @@ teardown() {
 
 @test "blocks reading .jks files" {
   local test_file="$TEST_DIR/keystore.jks"
-  echo "fake-keystore" > "$test_file"
+  echo "fake-keystore" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -107,7 +107,7 @@ teardown() {
 
 @test "blocks reading .keystore files" {
   local test_file="$TEST_DIR/app.keystore"
-  echo "fake-keystore" > "$test_file"
+  echo "fake-keystore" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -118,7 +118,7 @@ teardown() {
 
 @test "blocks reading .credentials files" {
   local test_file="$TEST_DIR/app.credentials"
-  echo "username:password" > "$test_file"
+  echo "username:password" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -127,7 +127,7 @@ teardown() {
 
 @test "blocks reading credentials.json files" {
   local test_file="$TEST_DIR/credentials.json"
-  echo '{"key":"value"}' > "$test_file"
+  echo '{"key":"value"}' >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -137,7 +137,7 @@ teardown() {
 @test "blocks reading .aws/credentials files" {
   local test_file="$TEST_DIR/.aws/credentials"
   mkdir -p "$TEST_DIR/.aws"
-  echo "[default]" > "$test_file"
+  echo "[default]" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -149,7 +149,7 @@ teardown() {
 @test "blocks reading .kube/config files" {
   local test_file="$TEST_DIR/.kube/config"
   mkdir -p "$TEST_DIR/.kube"
-  echo "apiVersion: v1" > "$test_file"
+  echo "apiVersion: v1" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -158,7 +158,7 @@ teardown() {
 
 @test "blocks reading kubeconfig files" {
   local test_file="$TEST_DIR/kubeconfig.yaml"
-  echo "apiVersion: v1" > "$test_file"
+  echo "apiVersion: v1" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -169,7 +169,7 @@ teardown() {
 
 @test "blocks reading .htpasswd files" {
   local test_file="$TEST_DIR/.htpasswd"
-  echo "user:hash" > "$test_file"
+  echo "user:hash" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -180,7 +180,7 @@ teardown() {
 
 @test "blocks reading .env files" {
   local test_file="$TEST_DIR/.env"
-  echo "SECRET=value" > "$test_file"
+  echo "SECRET=value" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -189,7 +189,7 @@ teardown() {
 
 @test "blocks reading .env.local files" {
   local test_file="$TEST_DIR/.env.local"
-  echo "SECRET=value" > "$test_file"
+  echo "SECRET=value" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -198,7 +198,7 @@ teardown() {
 
 @test "blocks reading .env.production files" {
   local test_file="$TEST_DIR/.env.production"
-  echo "SECRET=value" > "$test_file"
+  echo "SECRET=value" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -209,7 +209,7 @@ teardown() {
 
 @test "blocks reading .sops.yaml files" {
   local test_file="$TEST_DIR/secrets.sops.yaml"
-  echo "encrypted: data" > "$test_file"
+  echo "encrypted: data" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -218,7 +218,7 @@ teardown() {
 
 @test "blocks reading .sops.json files" {
   local test_file="$TEST_DIR/config.sops.json"
-  echo '{"encrypted":"data"}' > "$test_file"
+  echo '{"encrypted":"data"}' >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -230,7 +230,7 @@ teardown() {
 @test "blocks reading .docker/config.json files" {
   local test_file="$TEST_DIR/.docker/config.json"
   mkdir -p "$TEST_DIR/.docker"
-  echo '{"auths":{}}' > "$test_file"
+  echo '{"auths":{}}' >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -240,7 +240,7 @@ teardown() {
 @test "blocks reading .config/gh/hosts.yml files" {
   local test_file="$TEST_DIR/.config/gh/hosts.yml"
   mkdir -p "$TEST_DIR/.config/gh"
-  echo "github.com:" > "$test_file"
+  echo "github.com:" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -249,7 +249,7 @@ teardown() {
 
 @test "blocks reading .npmrc files" {
   local test_file="$TEST_DIR/.npmrc"
-  echo "//registry.npmjs.org/:_authToken=npm_xxx" > "$test_file"
+  echo "//registry.npmjs.org/:_authToken=npm_xxx" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -258,7 +258,7 @@ teardown() {
 
 @test "blocks reading .pypirc files" {
   local test_file="$TEST_DIR/.pypirc"
-  echo "[pypi]" > "$test_file"
+  echo "[pypi]" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -267,7 +267,7 @@ teardown() {
 
 @test "blocks reading .netrc files" {
   local test_file="$TEST_DIR/.netrc"
-  echo "machine github.com login user password xxx" > "$test_file"
+  echo "machine github.com login user password xxx" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -276,7 +276,7 @@ teardown() {
 
 @test "blocks reading .vault-token files" {
   local test_file="$TEST_DIR/.vault-token"
-  echo "s.xxxxx" > "$test_file"
+  echo "s.xxxxx" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success
@@ -286,7 +286,7 @@ teardown() {
 @test "blocks reading .ssh/config files" {
   local test_file="$TEST_DIR/.ssh/config"
   mkdir -p "$TEST_DIR/.ssh"
-  echo "Host *" > "$test_file"
+  echo "Host *" >"$test_file"
 
   run check_file_would_be_denied "$test_file"
   assert_success

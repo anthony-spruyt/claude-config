@@ -13,10 +13,17 @@ REPO_ROOT="${REPO_ROOT:-/workspaces/claude-config}"
 # Find hookify plugin path (installed or local)
 find_hookify_plugin() {
   local home="$HOME"
-  local path=$(ls -d "$home/.claude/plugins/cache/hookify-plus-local/hookify-plus/"*/ 2>/dev/null | tail -1)
-  if [[ -n "$path" ]]; then echo "$path"; return; fi
-  path=$(ls -d "$home/.claude/plugins/cache/"*/hookify-plus/*/ 2>/dev/null | tail -1)
-  if [[ -n "$path" ]]; then echo "$path"; return; fi
+  local path
+  path=$(find "$home/.claude/plugins/cache/hookify-plus-local/hookify-plus/" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | tail -1)
+  if [[ -n "$path" ]]; then
+    echo "$path/"
+    return
+  fi
+  path=$(find "$home/.claude/plugins/cache/" -maxdepth 3 -mindepth 3 -path "*/hookify-plus/*" -type d 2>/dev/null | tail -1)
+  if [[ -n "$path" ]]; then
+    echo "$path/"
+    return
+  fi
   echo ""
 }
 
