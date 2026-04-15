@@ -27,7 +27,7 @@ jobs:
       - name: Generate GitHub App JWT
         id: app-jwt
         env:
-          APP_ID: ${{ secrets.APP_ID }}
+          APP_CLIENT_ID: ${{ secrets.APP_CLIENT_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
         run: |
           # Generate JWT for GitHub App authentication
@@ -41,7 +41,7 @@ jobs:
 
           # Create JWT header and payload
           HEADER=$(printf '%s' '{"alg":"RS256","typ":"JWT"}' | base64 -w 0 | tr -d '=' | tr '/+' '_-')
-          PAYLOAD=$(printf '%s' "{\"iat\":${IAT},\"exp\":${EXP},\"iss\":\"${APP_ID}\"}" | base64 -w 0 | tr -d '=' | tr '/+' '_-')
+          PAYLOAD=$(printf '%s' "{\"iat\":${IAT},\"exp\":${EXP},\"iss\":\"${APP_CLIENT_ID}\"}" | base64 -w 0 | tr -d '=' | tr '/+' '_-')
 
           # Sign with private key
           SIGNATURE=$(printf '%s' "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_FILE" -binary | base64 -w 0 | tr -d '=' | tr '/+' '_-')
@@ -170,7 +170,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ matrix.owner }}
           repositories: ${{ matrix.repo_name }}
