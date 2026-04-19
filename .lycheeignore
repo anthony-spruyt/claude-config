@@ -8,6 +8,9 @@ https://www.conventionalcommits.org/.*
 # Shell variables in workflow files get URL-encoded as %7B (for {)
 .*%7B.*
 
+# MCP server URLs use private .lan domains with shell variable substitution
+.*\.lan/.*
+
 # GitHub rate-limits unauthenticated requests (429 Too Many Requests)
 https://github.com/.*
 https://raw.githubusercontent.com/.*
