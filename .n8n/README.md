@@ -47,32 +47,32 @@ Route Events (Switch node)
 #### 1. Configure GitHub OAuth2 Credential in n8n
 
 1. In n8n, go to **Credentials** → **Add Credential**
-2. Select **GitHub OAuth2 API**
-3. Enter:
+1. Select **GitHub OAuth2 API**
+1. Enter:
    - **Client ID:** From your GitHub App (`n8n-spruyt-labs`)
    - **Client Secret:** From your GitHub App
-4. Click **Connect** and authorize
-5. Save as `GitHub OAuth2`
+1. Click **Connect** and authorize
+1. Save as `GitHub OAuth2`
 
 #### 2. Import Workflow
 
 1. Click **Workflows** → **Add Workflow** → **Import from File**
-2. Select `github-app-webhook-to-workflow-dispatch.json`
-3. Click **Import**
+1. Select `github-app-webhook-to-workflow-dispatch.json`
+1. Click **Import**
 
 #### 3. Configure Claude Config Sync GitHub App
 
 1. Go to your Claude Config Sync GitHub App settings
-2. Under **Webhook**:
+1. Under **Webhook**:
    - **Webhook URL:** Copy from n8n webhook node (Production URL)
    - **Active:** ✅ Enabled
-3. Under **Permissions**:
+1. Under **Permissions**:
    - **Repository permissions → Issues:** Read and write
-4. Under **Permissions & events** → **Subscribe to events**:
+1. Under **Permissions & events** → **Subscribe to events**:
    - ✅ **Installation**
    - ✅ **Installation repositories**
    - ✅ **Issues** (for dashboard sync requests)
-5. Save changes
+1. Save changes
 
 #### 4. Activate Workflow
 
@@ -83,7 +83,7 @@ Toggle the workflow to **Active** in n8n.
 Install the GitHub App on a test repository and check:
 
 1. n8n **Executions** tab for successful run
-2. GitHub Actions for triggered `sync-to-repos.yaml` workflow
+1. GitHub Actions for triggered `sync-to-repos.yaml` workflow
 
 ### Troubleshooting
 

@@ -1,7 +1,6 @@
 # Claude Config
 
-![CI](https://github.com/anthony-spruyt/claude-config/actions/workflows/ci.yaml/badge.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![CI](https://github.com/anthony-spruyt/claude-config/actions/workflows/ci.yaml/badge.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Centralized Claude Code configuration with security-focused distribution across repositories.
 
@@ -63,8 +62,8 @@ See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 This repository implements defense-in-depth with three security layers:
 
 1. **File Permissions** - Blocks access to SSH keys, certificates, credentials, and secrets
-2. **Command Blocking** - Prevents commands that could expose secrets (base64, sops, printenv)
-3. **Hookify Rules** - Event-based safety controls for Kubernetes, SOPS, and environment access
+1. **Command Blocking** - Prevents commands that could expose secrets (base64, sops, printenv)
+1. **Hookify Rules** - Event-based safety controls for Kubernetes, SOPS, and environment access
 
 **Important:** Claude Code uses different pattern syntaxes:
 

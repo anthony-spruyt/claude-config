@@ -7,15 +7,17 @@ For an overview of the project, see the [README](README.md).
 ## Development Setup
 
 1. Fork this repository
-2. Clone your fork:
+
+1. Clone your fork:
 
    ```bash
    git clone https://github.com/YOUR_USERNAME/claude-config.git
    cd claude-config
    ```
 
-3. Open in VS Code and reopen in devcontainer
-4. Verify your setup: `./test.sh && ./lint.sh`
+1. Open in VS Code and reopen in devcontainer
+
+1. Verify your setup: `./test.sh && ./lint.sh`
 
 For detailed setup instructions (prerequisites, SSH agent, troubleshooting), see [DEVELOPMENT.md](DEVELOPMENT.md).
 
@@ -64,24 +66,25 @@ test(security): add tests for new file permission patterns
 
 1. **Create a branch** from `main` using the naming convention above
 
-2. **Make your changes** and commit using Conventional Commits
+1. **Make your changes** and commit using Conventional Commits
 
-3. **Ensure all checks pass**:
+1. **Ensure all checks pass**:
 
    ```bash
    ./test.sh   # All tests must pass
    ./lint.sh   # No linting errors
    ```
 
-4. **Push and open a PR** against `main`
+1. **Push and open a PR** against `main`
 
-5. **Request a review** and address any feedback
+1. **Request a review** and address any feedback
 
 ## Testing Requirements
 
 All security controls must be tested. Before submitting:
 
 - Run the full test suite: `./test.sh`
+
 - Add tests for new functionality:
 
   | Change Type      | Test Location                               |
