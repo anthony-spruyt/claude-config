@@ -15,8 +15,8 @@ This project follows a rolling release model on the `main` branch. Always use th
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do not** open a public issue
-2. Email the maintainer directly or use [GitHub's private vulnerability reporting](https://github.com/anthony-spruyt/claude-config/security/advisories/new)
-3. Include:
+1. Email the maintainer directly or use [GitHub's private vulnerability reporting](https://github.com/anthony-spruyt/claude-config/security/advisories/new)
+1. Include:
    - Description of the vulnerability
    - Steps to reproduce
    - Potential impact

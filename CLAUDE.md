@@ -53,11 +53,11 @@ This repository implements defense-in-depth with multiple security layers:
 
 1. **File Permissions** ([.claude/settings.json](.claude/settings.json)) - Denies Claude Code access to sensitive files (SSH keys, certificates, cloud credentials, environment files, SOPS encrypted files, tokens/secrets)
 
-2. **Command Blocking** ([.claude/settings.json](.claude/settings.json)) - Prevents executing commands that could expose secrets (base64 decode, sops/gpg decrypt, printenv, openssl decryption)
+1. **Command Blocking** ([.claude/settings.json](.claude/settings.json)) - Prevents executing commands that could expose secrets (base64 decode, sops/gpg decrypt, printenv, openssl decryption)
 
-3. **Hookify Rules** (`.claude/hookify.common-*.local.md`) - Event-based workflow automation and safety controls for Kubernetes operations, secret management, environment access, and workflow confirmation
+1. **Hookify Rules** (`.claude/hookify.common-*.local.md`) - Event-based workflow automation and safety controls for Kubernetes operations, secret management, environment access, and workflow confirmation
 
-4. **Hookify-Plus Plugin** ([anthony-spruyt/hookify-plus](https://github.com/anthony-spruyt/hookify-plus)) - Extended hookify that fixes [#12446](https://github.com/anthropics/claude-code/issues/12446) and adds rate-limited warnings
+1. **Hookify-Plus Plugin** ([anthony-spruyt/hookify-plus](https://github.com/anthony-spruyt/hookify-plus)) - Extended hookify that fixes [#12446](https://github.com/anthropics/claude-code/issues/12446) and adds rate-limited warnings
 
 **Complete list:** See [.claude/settings.json](.claude/settings.json) for file/command patterns and `.claude/hookify.common-*.local.md` files for active rules. All security layers are validated by automated tests in `tests/security/` and `tests/hooks/`.
 
@@ -68,14 +68,14 @@ The official hookify plugin has a bug ([#12446](https://github.com/anthropics/cl
 **Installation:**
 
 1. `/plugin` → Add plugin → `anthony-spruyt/hookify-plus`
-2. Restart Claude Code
-3. Hooks will fire on tool use
+1. Restart Claude Code
+1. Hooks will fire on tool use
 
 **Features:**
 
 1. **Fix #12446** - Messages reach Claude via stderr + exit 2 (not stdout + exit 0)
-2. **Rate-limited warnings** - `warn_once` and `warn_interval` fields to reduce context waste
-3. **Per-subagent state** - State resets when Task tool spawns subagents
+1. **Rate-limited warnings** - `warn_once` and `warn_interval` fields to reduce context waste
+1. **Per-subagent state** - State resets when Task tool spawns subagents
 
 **Rate limiting fields:**
 
@@ -147,8 +147,8 @@ Common regex features:
 If your deny rules aren't working:
 
 1. Check you're using the correct prefix (`./**/`, `~/`, `//`)
-2. Verify glob vs regex syntax (permissions use globs, hooks use regex)
-3. Test with the actual path Claude Code would use
+1. Verify glob vs regex syntax (permissions use globs, hooks use regex)
+1. Test with the actual path Claude Code would use
 
 ### Distribution Model
 
@@ -160,9 +160,9 @@ If your deny rules aren't working:
 **Automated Distribution:**
 
 1. Changes pushed to `main` branch
-2. GitHub Actions workflow ([.github/workflows/sync-to-repos.yaml](.github/workflows/sync-to-repos.yaml)) triggers
-3. Workflow queries GitHub App installations to find target repositories
-4. For each target repo:
+1. GitHub Actions workflow ([.github/workflows/sync-to-repos.yaml](.github/workflows/sync-to-repos.yaml)) triggers
+1. Workflow queries GitHub App installations to find target repositories
+1. For each target repo:
    - Clones both config and target repos
    - Syncs only `common-` prefixed files (preserves repo-specific config)
    - Uses fixed branch `chore/update-claude-config` (one PR per repo)
@@ -215,23 +215,27 @@ exclude_files:
 **How it works:**
 
 1. Sync script clones target repo
-2. Checks for `.claude/.sync-config.yaml`
-3. Skips excluded categories/files during sync
-4. Excluded files are not deleted if they already exist
+1. Checks for `.claude/.sync-config.yaml`
+1. Skips excluded categories/files during sync
+1. Excluded files are not deleted if they already exist
 
 **Note:** Requires `yq` (YAML parser) on the sync runner. If `yq` is unavailable, exclusions are ignored and all files sync normally.
 
 ### Configuration Components
 
 - **[.claude/settings.json](.claude/settings.json)** - Core configuration:
+
   - Permission denials for sensitive files/commands
   - PreToolUse/PostToolUse hooks (hookify-plus plugin from GitHub)
   - PostToolUse hooks (auto-format with Prettier after edits)
   - Enabled plugins: context7, security-guidance, feature-dev, hookify-plus
 
 - **`.claude/hookify.common-*.local.md`** - Shared hookify rules (synced from central config)
+
 - **`.claude/rules/common-*.md`** - Shared Claude Code rules (synced from central config)
+
 - **`.claude/agents/common-*.md`** - Shared agents (synced from central config)
+
 - **`.claude/commands/common-*.md`** - Shared slash commands (synced from central config)
 
 ### Slash Commands
@@ -283,7 +287,7 @@ allowed-tools: Bash(gh:*), Bash(ls:*), Bash(cat:*), Read
 Agent `.md` file changes require a reload to take effect:
 
 1. **During session:** Use `/reload` command (if available in your CLI version)
-2. **Otherwise:** Exit and restart the session
+1. **Otherwise:** Exit and restart the session
 
 Text instructions (like "NEVER delete files") are often ignored by agents. Use `allowed-tools` restrictions for enforcement.
 
