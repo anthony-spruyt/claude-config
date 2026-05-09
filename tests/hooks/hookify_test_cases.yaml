@@ -199,6 +199,26 @@ test_cases:
     command: "env PATH=/bin command"
     expect: allow
 
+  - name: "block-env-dump: env --zero --null (stacked dump flags)"
+    tool: Bash
+    command: "env --zero --null"
+    expect: block
+
+  - name: "block-env-dump: env -0 -- (stacked dump flags)"
+    tool: Bash
+    command: "env -0 --"
+    expect: block
+
+  - name: "block-env-dump: env -0 -- | cut -d= -f1 (stacked flags, safe pipe)"
+    tool: Bash
+    command: "env -0 -- | cut -d= -f1"
+    expect: allow
+
+  - name: "block-env-dump: allows env -i | sort (empty env, no secrets)"
+    tool: Bash
+    command: "env -i | sort"
+    expect: allow
+
   - name: "block-env-dump: cross-line env + pipe not matched"
     tool: Bash
     command: "set environment\n| Name | Default |"
@@ -286,6 +306,11 @@ test_cases:
     tool: Bash
     command: "printenv | cut -d= -f1; echo done"
     expect: allow
+
+  - name: "block-printenv: printenv HOME (named variable blocked)"
+    tool: Bash
+    command: "printenv HOME"
+    expect: block
 
   - name: "block-printenv: cross-line printenv + pipe not matched"
     tool: Bash
