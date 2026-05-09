@@ -2,7 +2,8 @@
 name: block-env-dump
 enabled: true
 event: bash
-pattern: (^|\s|&&|\|\||;|\(|`)env[^\S\n]*($|;|&&|\|\||\)|`|\|[^\S\n]*(?![^\S\n]*(cut[^\S\n]+-d|wc([^\S\n]|$))))
+# Lookahead: allow pipe to cut -d= -f1 (keys only) or wc (count only)
+pattern: (^|\s|&&|\|\||;|\(|`)env[^\S\n]*($|;|&&|\|\||\)|`|\|[^\S\n]*(?![^\S\n]*(cut[^\S\n]+-d\S+[^\S\n]+-f1([^\S\n]|$)|wc([^\S\n]|$))))
 action: block
 ---
 
