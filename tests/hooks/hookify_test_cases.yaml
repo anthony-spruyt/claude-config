@@ -172,6 +172,11 @@ test_cases:
     command: "printenv | cut -d= -f1,2"
     expect: block
 
+  - name: "block-printenv: printenv | cut -d= -f1-2 (extracts key+value range)"
+    tool: Bash
+    command: "printenv | cut -d= -f1-2"
+    expect: block
+
   - name: "block-printenv: allows printenv | cut -d= -f1 (keys only)"
     tool: Bash
     command: "printenv | cut -d= -f1"

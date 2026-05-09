@@ -2,7 +2,8 @@
 name: block-printenv
 enabled: true
 event: bash
-# Lookahead: allow pipe to cut -d= -f1 (keys only) or wc (count only)
+# Lookahead: allow pipe to cut -d= -f1 (keys only) or wc (count only).
+# -f1 boundary: ([^\S\n]|$) ensures -f10, -f1,2, -f1-2 stay blocked.
 pattern: (^|\s|&&|\|\||;|\(|`)printenv([^\S\n]+[^\s|]|[^\S\n]*($|;|&&|\|\||\)|`|\|[^\S\n]*(?![^\S\n]*(cut[^\S\n]+-d\S+[^\S\n]+-f1([^\S\n]|$)|wc([^\S\n]|$)))))
 action: block
 ---
