@@ -2,7 +2,7 @@
 name: block-env-dump
 enabled: true
 event: bash
-pattern: (^|\s|&&|\|\||;|\(|`)env\s*($|\||;|&&|\|\||\)|`)
+pattern: (^|\s|&&|\|\||;|\(|`)env[^\S\n]*($|;|&&|\|\||\)|`|\|[^\S\n]*(?![^\S\n]*(cut[^\S\n]+-d|wc([^\S\n]|$))))
 action: block
 ---
 
@@ -22,3 +22,5 @@ action: block
 - List variable names only: `env | cut -d= -f1`
 - Check if variable exists: `[ -n "$VAR" ] && echo "set"`
 - Get specific non-secret var: `echo $PATH`
+
+**False positive?** Open an issue: `gh issue create --repo anthony-spruyt/claude-config --title "False positive: block-env-dump" --label bug` and describe the blocked command in the body using `--body-file` to avoid re-triggering hooks.

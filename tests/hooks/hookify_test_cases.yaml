@@ -54,17 +54,20 @@ test_cases:
     command: "printenv | grep TOKEN"
     expect: block
 
-  # NOTE: These are blocked by block-env-dump rule (env with pipe) even though
-  # block-env-dump message lists "env | cut" as a safe alternative. Rule bug.
-  - name: "block-env-grep: env | cut blocked by env-dump"
+  - name: "block-env-grep: env | cut is safe (keys only)"
     tool: Bash
     command: "env | cut -d= -f1"
-    expect: block
+    expect: allow
 
-  - name: "block-env-grep: env | wc blocked by env-dump"
+  - name: "block-env-grep: env | wc is safe (count only)"
     tool: Bash
     command: "env | wc -l"
-    expect: block
+    expect: allow
+
+  - name: "block-env-grep: cross-line env + grep warns (grep-tool, not blocked)"
+    tool: Bash
+    command: "echo environment\n| grep pattern"
+    expect: warn
 
   # =============================================================================
   # Environment Dump (block-env-dump)
@@ -84,9 +87,41 @@ test_cases:
     command: "mkdir /tmp && env"
     expect: block
 
+  - name: "block-env-dump: env | sort (shows values)"
+    tool: Bash
+    command: "env | sort"
+    expect: block
+
+  # Also proves env-dump allows this (tested in block-env-grep section too)
+  - name: "block-env-dump: allows env | cut -d= -f1 (keys only)"
+    tool: Bash
+    command: "env | cut -d= -f1"
+    expect: allow
+
+  # Also proves env-dump allows this (tested in block-env-grep section too)
+  - name: "block-env-dump: allows env | wc -l (count only)"
+    tool: Bash
+    command: "env | wc -l"
+    expect: allow
+
+  - name: "block-env-dump: allows env | wc (count only)"
+    tool: Bash
+    command: "env | wc"
+    expect: allow
+
+  - name: "block-env-dump: allows env | cut -d= -f1 | sort"
+    tool: Bash
+    command: "env | cut -d= -f1 | sort"
+    expect: allow
+
   - name: "block-env-dump: allows env VAR=value command"
     tool: Bash
     command: "env PATH=/bin command"
+    expect: allow
+
+  - name: "block-env-dump: cross-line env + pipe not matched"
+    tool: Bash
+    command: "set environment\n| Name | Default |"
     expect: allow
 
   # =============================================================================
@@ -106,6 +141,36 @@ test_cases:
     tool: Bash
     command: "ls && printenv"
     expect: block
+
+  - name: "block-printenv: printenv | sort (shows values)"
+    tool: Bash
+    command: "printenv | sort"
+    expect: block
+
+  - name: "block-printenv: allows printenv | cut -d= -f1 (keys only)"
+    tool: Bash
+    command: "printenv | cut -d= -f1"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | wc -l (count only)"
+    tool: Bash
+    command: "printenv | wc -l"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | wc (count only)"
+    tool: Bash
+    command: "printenv | wc"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | cut -d= -f1 | sort"
+    tool: Bash
+    command: "printenv | cut -d= -f1 | sort"
+    expect: allow
+
+  - name: "block-printenv: cross-line printenv + pipe not matched"
+    tool: Bash
+    command: "run printenv\n| Name | Value |"
+    expect: allow
 
   # =============================================================================
   # Process Environ (block-proc-environ)
@@ -1043,4 +1108,9 @@ test_cases:
   - name: "block-set-dump: allows set -a"
     tool: Bash
     command: "set -a"
+    expect: allow
+
+  - name: "block-set-dump: cross-line set + pipe not matched"
+    tool: Bash
+    command: "Variables need to be set\n| Name | Default |"
     expect: allow
