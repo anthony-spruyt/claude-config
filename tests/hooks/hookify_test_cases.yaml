@@ -179,6 +179,21 @@ test_cases:
     command: "env | cut -d= -f1 | sort"
     expect: allow
 
+  - name: "block-env-dump: env | cut -d= -f1 --complement (inverts to values)"
+    tool: Bash
+    command: "env | cut -d= -f1 --complement"
+    expect: block
+
+  - name: "block-env-dump: env | cut -d= -f1 -s (trailing flag after -f1)"
+    tool: Bash
+    command: "env | cut -d= -f1 -s"
+    expect: block
+
+  - name: "block-env-dump: allows env | cut -d= -f1; echo done"
+    tool: Bash
+    command: "env | cut -d= -f1; echo done"
+    expect: allow
+
   - name: "block-env-dump: allows env VAR=value command"
     tool: Bash
     command: "env PATH=/bin command"
@@ -255,6 +270,21 @@ test_cases:
   - name: "block-printenv: allows printenv | cut -d= -f1|sort (pipe without space after f1)"
     tool: Bash
     command: "printenv | cut -d= -f1|sort"
+    expect: allow
+
+  - name: "block-printenv: printenv | cut -d= -f1 --complement (inverts to values)"
+    tool: Bash
+    command: "printenv | cut -d= -f1 --complement"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d= -f1 -s (trailing flag after -f1)"
+    tool: Bash
+    command: "printenv | cut -d= -f1 -s"
+    expect: block
+
+  - name: "block-printenv: allows printenv | cut -d= -f1; echo done"
+    tool: Bash
+    command: "printenv | cut -d= -f1; echo done"
     expect: allow
 
   - name: "block-printenv: cross-line printenv + pipe not matched"
