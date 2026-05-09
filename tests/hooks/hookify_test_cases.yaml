@@ -64,9 +64,19 @@ test_cases:
     command: "env | wc -l"
     expect: allow
 
-  - name: "block-env-grep: cross-line env + grep warns (grep-tool, not blocked)"
+  - name: "block-env-grep: cross-line env + grep not blocked (grep-tool warns)"
     tool: Bash
     command: "echo environment\n| grep pattern"
+    expect: warn
+
+  - name: "block-env-grep: myenv | grep not blocked (word boundary, grep-tool warns)"
+    tool: Bash
+    command: "myenv | grep foo"
+    expect: warn
+
+  - name: "block-env-grep: setenv | grep not blocked (word boundary, grep-tool warns)"
+    tool: Bash
+    command: "setenv | grep bar"
     expect: warn
 
   # =============================================================================
@@ -111,6 +121,41 @@ test_cases:
     tool: Bash
     command: "env | cut -d: -f1"
     expect: block
+
+  - name: "block-env-dump: env -0 (null-delimited dump)"
+    tool: Bash
+    command: "env -0"
+    expect: block
+
+  - name: "block-env-dump: env -- (end-of-options dump)"
+    tool: Bash
+    command: "env --"
+    expect: block
+
+  - name: "block-env-dump: env --null (null-delimited dump)"
+    tool: Bash
+    command: "env --null"
+    expect: block
+
+  - name: "block-env-dump: env -0 | sort (flagged dump with pipe)"
+    tool: Bash
+    command: "env -0 | sort"
+    expect: block
+
+  - name: "block-env-dump: env -- | head (flagged dump with pipe)"
+    tool: Bash
+    command: "env -- | head"
+    expect: block
+
+  - name: "block-env-dump: env -- | cut -d= -f1 (flagged dump, safe pipe)"
+    tool: Bash
+    command: "env -- | cut -d= -f1"
+    expect: allow
+
+  - name: "block-env-dump: env | cut -d= -f1|sort (pipe without space after f1)"
+    tool: Bash
+    command: "env | cut -d= -f1|sort"
+    expect: allow
 
   # Also proves env-dump allows this (tested in block-env-grep section too)
   - name: "block-env-dump: allows env | cut -d= -f1 (keys only)"
@@ -205,6 +250,11 @@ test_cases:
   - name: "block-printenv: allows printenv | cut -d= -f1 | sort"
     tool: Bash
     command: "printenv | cut -d= -f1 | sort"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | cut -d= -f1|sort (pipe without space after f1)"
+    tool: Bash
+    command: "printenv | cut -d= -f1|sort"
     expect: allow
 
   - name: "block-printenv: cross-line printenv + pipe not matched"

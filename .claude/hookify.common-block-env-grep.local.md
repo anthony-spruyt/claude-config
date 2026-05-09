@@ -2,7 +2,7 @@
 name: block-env-grep
 enabled: true
 event: bash
-pattern: (env|printenv)[^\S\n]*\|[^\S\n]*grep
+pattern: (^|\s|&&|\|\||;|\(|`)(env|printenv)[^\S\n]*\|[^\S\n]*grep
 action: block
 ---
 
