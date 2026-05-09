@@ -107,6 +107,11 @@ test_cases:
     command: "env | cut -d= -f1-2"
     expect: block
 
+  - name: "block-env-dump: env | cut -d: -f1 (wrong delimiter leaks values)"
+    tool: Bash
+    command: "env | cut -d: -f1"
+    expect: block
+
   # Also proves env-dump allows this (tested in block-env-grep section too)
   - name: "block-env-dump: allows env | cut -d= -f1 (keys only)"
     tool: Bash
@@ -175,6 +180,11 @@ test_cases:
   - name: "block-printenv: printenv | cut -d= -f1-2 (extracts key+value range)"
     tool: Bash
     command: "printenv | cut -d= -f1-2"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d: -f1 (wrong delimiter leaks values)"
+    tool: Bash
+    command: "printenv | cut -d: -f1"
     expect: block
 
   - name: "block-printenv: allows printenv | cut -d= -f1 (keys only)"
