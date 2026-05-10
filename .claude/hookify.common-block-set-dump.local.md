@@ -2,7 +2,7 @@
 name: block-set-dump
 enabled: true
 event: bash
-pattern: (^|\s|&&|\|\||;|\(|`)set([^\S\n]*$|[^\S\n]*\||[^\S\n]*;|[^\S\n]*&&|[^\S\n]*\|\||[^\S\n]*\)|[^\S\n]*`)
+pattern: (^|\s|&&|\|\||;|\(|`)set([^\S\n]*$|[^\S\n]*\||[^\S\n]*;|[^\S\n]*&&|[^\S\n]*\|\||[^\S\n]*\)|[^\S\n]*`|[^\S\n]*([0-9]*|&)?>[^\S\n]*\S)
 action: block
 ---
 

@@ -4,7 +4,7 @@ enabled: true
 event: bash
 # Lookahead: allow pipe to cut -d= -f1 (keys only) or wc (count only).
 # -f1 boundary: require command terminator or pipe after -f1 — blocks trailing flags like --complement.
-pattern: (^|\s|&&|\|\||;|\(|`)printenv([^\S\n]+[^\s|]|[^\S\n]*($|;|&&|\|\||\)|`|\|[^\S\n]*(?![^\S\n]*(cut[^\S\n]+-d=[^\S\n]+-f1([^\S\n]*($|;|&&|\|\||\)|`|\|))|wc([^\S\n]|$)))))
+pattern: (^|\s|&&|\|\||;|\(|`)printenv([^\S\n]+[^\s|>]|[^\S\n]*($|;|&&|\|\||\)|`|([0-9]*|&)?>[^\S\n]*\S|\|[^\S\n]*(?![^\S\n]*(cut[^\S\n]+(-d=|--delimiter==)[^\S\n]+(-f1|--fields=1)([^\S\n]*($|;|&&|\|\||\)|`|\|))|wc([^\S\n]|$)))))
 action: block
 ---
 
