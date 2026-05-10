@@ -54,17 +54,30 @@ test_cases:
     command: "printenv | grep TOKEN"
     expect: block
 
-  # NOTE: These are blocked by block-env-dump rule (env with pipe) even though
-  # block-env-dump message lists "env | cut" as a safe alternative. Rule bug.
-  - name: "block-env-grep: env | cut blocked by env-dump"
+  - name: "block-env-grep: env | cut is safe (keys only)"
     tool: Bash
     command: "env | cut -d= -f1"
-    expect: block
+    expect: allow
 
-  - name: "block-env-grep: env | wc blocked by env-dump"
+  - name: "block-env-grep: env | wc is safe (count only)"
     tool: Bash
     command: "env | wc -l"
-    expect: block
+    expect: allow
+
+  - name: "block-env-grep: cross-line env + grep not blocked (grep-tool warns)"
+    tool: Bash
+    command: "echo environment\n| grep pattern"
+    expect: warn
+
+  - name: "block-env-grep: myenv | grep not blocked (word boundary, grep-tool warns)"
+    tool: Bash
+    command: "myenv | grep foo"
+    expect: warn
+
+  - name: "block-env-grep: setenv | grep not blocked (word boundary, grep-tool warns)"
+    tool: Bash
+    command: "setenv | grep bar"
+    expect: warn
 
   # =============================================================================
   # Environment Dump (block-env-dump)
@@ -84,9 +97,176 @@ test_cases:
     command: "mkdir /tmp && env"
     expect: block
 
+  - name: "block-env-dump: env | sort (shows values)"
+    tool: Bash
+    command: "env | sort"
+    expect: block
+
+  - name: "block-env-dump: env | cut -d= -f2 (extracts values)"
+    tool: Bash
+    command: "env | cut -d= -f2"
+    expect: block
+
+  - name: "block-env-dump: env | cut -d= -f1,2 (extracts key+value)"
+    tool: Bash
+    command: "env | cut -d= -f1,2"
+    expect: block
+
+  - name: "block-env-dump: env | cut -d= -f1-2 (extracts key+value range)"
+    tool: Bash
+    command: "env | cut -d= -f1-2"
+    expect: block
+
+  - name: "block-env-dump: env | cut -d: -f1 (wrong delimiter leaks values)"
+    tool: Bash
+    command: "env | cut -d: -f1"
+    expect: block
+
+  - name: "block-env-dump: env -0 (null-delimited dump)"
+    tool: Bash
+    command: "env -0"
+    expect: block
+
+  - name: "block-env-dump: env -- (end-of-options dump)"
+    tool: Bash
+    command: "env --"
+    expect: block
+
+  - name: "block-env-dump: env --null (null-delimited dump)"
+    tool: Bash
+    command: "env --null"
+    expect: block
+
+  - name: "block-env-dump: env -0 | sort (flagged dump with pipe)"
+    tool: Bash
+    command: "env -0 | sort"
+    expect: block
+
+  - name: "block-env-dump: env -- | head (flagged dump with pipe)"
+    tool: Bash
+    command: "env -- | head"
+    expect: block
+
+  - name: "block-env-dump: env -- | cut -d= -f1 (flagged dump, safe pipe)"
+    tool: Bash
+    command: "env -- | cut -d= -f1"
+    expect: allow
+
+  - name: "block-env-dump: env | cut -d= -f1|sort (pipe without space after f1)"
+    tool: Bash
+    command: "env | cut -d= -f1|sort"
+    expect: allow
+
+  # Also proves env-dump allows this (tested in block-env-grep section too)
+  - name: "block-env-dump: allows env | cut -d= -f1 (keys only)"
+    tool: Bash
+    command: "env | cut -d= -f1"
+    expect: allow
+
+  # Also proves env-dump allows this (tested in block-env-grep section too)
+  - name: "block-env-dump: allows env | wc -l (count only)"
+    tool: Bash
+    command: "env | wc -l"
+    expect: allow
+
+  - name: "block-env-dump: allows env | wc (count only)"
+    tool: Bash
+    command: "env | wc"
+    expect: allow
+
+  - name: "block-env-dump: allows env | cut -d= -f1 | sort"
+    tool: Bash
+    command: "env | cut -d= -f1 | sort"
+    expect: allow
+
+  - name: "block-env-dump: env | cut -d= -f1 --complement (inverts to values)"
+    tool: Bash
+    command: "env | cut -d= -f1 --complement"
+    expect: block
+
+  - name: "block-env-dump: env | cut -d= -f1 -s (trailing flag after -f1)"
+    tool: Bash
+    command: "env | cut -d= -f1 -s"
+    expect: block
+
+  - name: "block-env-dump: allows env | cut -d= -f1; echo done"
+    tool: Bash
+    command: "env | cut -d= -f1; echo done"
+    expect: allow
+
   - name: "block-env-dump: allows env VAR=value command"
     tool: Bash
     command: "env PATH=/bin command"
+    expect: allow
+
+  - name: "block-env-dump: env --zero --null (stacked dump flags)"
+    tool: Bash
+    command: "env --zero --null"
+    expect: block
+
+  - name: "block-env-dump: env -0 -- (stacked dump flags)"
+    tool: Bash
+    command: "env -0 --"
+    expect: block
+
+  - name: "block-env-dump: env -0 -- | cut -d= -f1 (stacked flags, safe pipe)"
+    tool: Bash
+    command: "env -0 -- | cut -d= -f1"
+    expect: allow
+
+  - name: "block-env-dump: allows env -i | sort (empty env, no secrets)"
+    tool: Bash
+    command: "env -i | sort"
+    expect: allow
+
+  - name: "block-env-dump: env > /tmp/file (redirect bypass blocked)"
+    tool: Bash
+    command: "env > /tmp/secrets.txt"
+    expect: block
+
+  - name: "block-env-dump: env >> /tmp/file (append redirect blocked)"
+    tool: Bash
+    command: "env >> /tmp/dump.txt"
+    expect: block
+
+  - name: "block-env-dump: env 1>/tmp/file (fd redirect blocked)"
+    tool: Bash
+    command: "env 1>/tmp/secrets.txt"
+    expect: block
+
+  - name: "block-env-dump: env &>/tmp/file (combined redirect blocked)"
+    tool: Bash
+    command: "env &>/tmp/secrets.txt"
+    expect: block
+
+  - name: "block-env-dump: env -u VARNAME (no command, dumps minus one var)"
+    tool: Bash
+    command: "env -u TERM"
+    expect: block
+
+  - name: "block-env-dump: env --unset=VARNAME (no command, dumps minus one var)"
+    tool: Bash
+    command: "env --unset=TERM"
+    expect: block
+
+  - name: "block-env-dump: env -u VAR1 -u VAR2 (stacked unset, still dumps)"
+    tool: Bash
+    command: "env -u TERM -u SHELL"
+    expect: block
+
+  - name: "block-env-dump: allows env -u SECRET command (unset var, runs cmd)"
+    tool: Bash
+    command: "env -u SECRET_KEY ./run.sh"
+    expect: allow
+
+  - name: "block-env-dump: allows env | cut --delimiter== --fields=1 (long form keys only)"
+    tool: Bash
+    command: "env | cut --delimiter== --fields=1"
+    expect: allow
+
+  - name: "block-env-dump: cross-line env + pipe not matched"
+    tool: Bash
+    command: "set environment\n| Name | Default |"
     expect: allow
 
   # =============================================================================
@@ -106,6 +286,106 @@ test_cases:
     tool: Bash
     command: "ls && printenv"
     expect: block
+
+  - name: "block-printenv: printenv | sort (shows values)"
+    tool: Bash
+    command: "printenv | sort"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d= -f2 (extracts values)"
+    tool: Bash
+    command: "printenv | cut -d= -f2"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d= -f1,2 (extracts key+value)"
+    tool: Bash
+    command: "printenv | cut -d= -f1,2"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d= -f1-2 (extracts key+value range)"
+    tool: Bash
+    command: "printenv | cut -d= -f1-2"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d: -f1 (wrong delimiter leaks values)"
+    tool: Bash
+    command: "printenv | cut -d: -f1"
+    expect: block
+
+  - name: "block-printenv: allows printenv | cut -d= -f1 (keys only)"
+    tool: Bash
+    command: "printenv | cut -d= -f1"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | wc -l (count only)"
+    tool: Bash
+    command: "printenv | wc -l"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | wc (count only)"
+    tool: Bash
+    command: "printenv | wc"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | cut -d= -f1 | sort"
+    tool: Bash
+    command: "printenv | cut -d= -f1 | sort"
+    expect: allow
+
+  - name: "block-printenv: allows printenv | cut -d= -f1|sort (pipe without space after f1)"
+    tool: Bash
+    command: "printenv | cut -d= -f1|sort"
+    expect: allow
+
+  - name: "block-printenv: printenv | cut -d= -f1 --complement (inverts to values)"
+    tool: Bash
+    command: "printenv | cut -d= -f1 --complement"
+    expect: block
+
+  - name: "block-printenv: printenv | cut -d= -f1 -s (trailing flag after -f1)"
+    tool: Bash
+    command: "printenv | cut -d= -f1 -s"
+    expect: block
+
+  - name: "block-printenv: allows printenv | cut -d= -f1; echo done"
+    tool: Bash
+    command: "printenv | cut -d= -f1; echo done"
+    expect: allow
+
+  - name: "block-printenv: printenv HOME (named variable blocked)"
+    tool: Bash
+    command: "printenv HOME"
+    expect: block
+
+  - name: "block-printenv: printenv > /tmp/file (redirect bypass blocked)"
+    tool: Bash
+    command: "printenv > /tmp/secrets.txt"
+    expect: block
+
+  - name: "block-printenv: printenv >> /tmp/file (append redirect blocked)"
+    tool: Bash
+    command: "printenv >> /tmp/dump.txt"
+    expect: block
+
+  - name: "block-printenv: printenv 1>/tmp/file (fd redirect blocked)"
+    tool: Bash
+    command: "printenv 1>/tmp/secrets.txt"
+    expect: block
+
+  - name: "block-printenv: printenv&>/tmp/file (no-space combined redirect blocked)"
+    tool: Bash
+    command: "printenv&>/tmp/secrets.txt"
+    expect: block
+
+  - name: "block-printenv: allows printenv | cut --delimiter== --fields=1 (long form keys only)"
+    tool: Bash
+    command: "printenv | cut --delimiter== --fields=1"
+    expect: allow
+
+  - name: "block-printenv: cross-line printenv + pipe not matched"
+    tool: Bash
+    command: "run printenv\n| Name | Value |"
+    expect: allow
 
   # =============================================================================
   # Process Environ (block-proc-environ)
@@ -1043,4 +1323,145 @@ test_cases:
   - name: "block-set-dump: allows set -a"
     tool: Bash
     command: "set -a"
+    expect: allow
+
+  - name: "block-set-dump: set > /tmp/file (redirect bypass blocked)"
+    tool: Bash
+    command: "set > /tmp/vars.txt"
+    expect: block
+
+  - name: "block-set-dump: set >> /tmp/file (append redirect blocked)"
+    tool: Bash
+    command: "set >> /tmp/dump.txt"
+    expect: block
+
+  - name: "block-set-dump: set 1>/tmp/file (fd redirect blocked)"
+    tool: Bash
+    command: "set 1>/tmp/vars.txt"
+    expect: block
+
+  - name: "block-set-dump: set &>/tmp/file (combined redirect blocked)"
+    tool: Bash
+    command: "set &>/tmp/vars.txt"
+    expect: block
+
+  - name: "block-set-dump: cross-line set + pipe not matched"
+    tool: Bash
+    command: "Variables need to be set\n| Name | Default |"
+    expect: allow
+
+  # =============================================================================
+  # Declare Dump (block-declare-dump)
+  # =============================================================================
+  - name: "block-declare-dump: declare -p (dumps all vars)"
+    tool: Bash
+    command: "declare -p"
+    expect: block
+
+  - name: "block-declare-dump: typeset -p (alias for declare -p)"
+    tool: Bash
+    command: "typeset -p"
+    expect: block
+
+  - name: "block-declare-dump: declare --print"
+    tool: Bash
+    command: "declare --print"
+    expect: block
+
+  - name: "block-declare-dump: declare -p | grep"
+    tool: Bash
+    command: "declare -p | grep SECRET"
+    expect: block
+
+  - name: "block-declare-dump: chained declare -p"
+    tool: Bash
+    command: "cd /tmp && declare -p"
+    expect: block
+
+  - name: "block-declare-dump: declare -px (p not last in flags)"
+    tool: Bash
+    command: "declare -px"
+    expect: block
+
+  - name: "block-declare-dump: declare -pA (p not last in flags)"
+    tool: Bash
+    command: "declare -pA"
+    expect: block
+
+  - name: "block-declare-dump: declare -pa (p not last in flags)"
+    tool: Bash
+    command: "declare -pa"
+    expect: block
+
+  - name: "block-declare-dump: declare -p -- (end-of-options dumps all)"
+    tool: Bash
+    command: "declare -p --"
+    expect: block
+
+  - name: "block-declare-dump: allows declare -p VARNAME (specific var)"
+    tool: Bash
+    command: "declare -p HOME"
+    expect: allow
+
+  - name: "block-declare-dump: allows declare -i VAR=1"
+    tool: Bash
+    command: "declare -i count=0"
+    expect: allow
+
+  - name: "block-declare-dump: allows declare -a ARR"
+    tool: Bash
+    command: "declare -a my_array"
+    expect: allow
+
+  - name: "block-declare-dump: allows declare -x VAR=value"
+    tool: Bash
+    command: "declare -x PATH=/usr/bin"
+    expect: allow
+
+  - name: "block-declare-dump: allows declare -f (functions only, no values)"
+    tool: Bash
+    command: "declare -f my_function"
+    expect: allow
+
+  # =============================================================================
+  # Export Dump (block-export-dump)
+  # =============================================================================
+  - name: "block-export-dump: export -p (dumps all exports)"
+    tool: Bash
+    command: "export -p"
+    expect: block
+
+  - name: "block-export-dump: export --print"
+    tool: Bash
+    command: "export --print"
+    expect: block
+
+  - name: "block-export-dump: export -p | grep"
+    tool: Bash
+    command: "export -p | grep TOKEN"
+    expect: block
+
+  - name: "block-export-dump: chained export -p"
+    tool: Bash
+    command: "cd /tmp && export -p"
+    expect: block
+
+  - name: "block-export-dump: export -pn (p not last in flags)"
+    tool: Bash
+    command: "export -pn"
+    expect: block
+
+  - name: "block-export-dump: allows export VAR=value"
+    tool: Bash
+    command: "export MY_VAR=hello"
+    expect: allow
+
+  - name: "block-export-dump: allows export -n VAR"
+    tool: Bash
+    command: "export -n MY_VAR"
+    expect: allow
+
+  - name: "block-export-dump: allows export PATH"
+    tool: Bash
+    command: "export PATH"
     expect: allow
