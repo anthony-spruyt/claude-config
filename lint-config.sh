@@ -8,7 +8,7 @@
 MEGALINTER_IMAGE="ghcr.io/anthony-spruyt/megalinter-claude-config:v1.0.28@sha256:8c076307cfa4c7f18560a217d078f6d181e737f10e99f3b26197148f0e846820"
 
 # Skip linting for renovate/dependabot commits in CI
-SKIP_BOT_COMMITS=true
+SKIP_BOT_COMMITS=false
 
 # MegaLinter flavor (use "all" for custom images to bypass flavor validation)
 MEGALINTER_FLAVOR="all"
