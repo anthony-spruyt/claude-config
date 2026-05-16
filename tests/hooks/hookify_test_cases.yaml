@@ -957,20 +957,50 @@ test_cases:
   # =============================================================================
   # Conventional Commits Warning (warn-conventional-commits)
   # =============================================================================
-  - name: "warn-conventional-commits: git commit -m"
+  - name: "warn-conventional-commits: non-conventional message"
     tool: Bash
-    command: 'git commit -m "message"'
+    command: 'git commit -m "update something"'
     expect: warn
 
-  - name: "warn-conventional-commits: git commit --amend"
+  - name: "warn-conventional-commits: missing type prefix"
     tool: Bash
-    command: "git commit --amend"
+    command: 'git commit -m "fix something without colon"'
     expect: warn
 
-  - name: "warn-conventional-commits: git commit -a -m"
+  - name: "warn-conventional-commits: git commit -a -m non-conventional"
     tool: Bash
     command: 'git commit -a -m "fix something"'
     expect: warn
+
+  - name: "warn-conventional-commits: chained git add && git commit non-conventional"
+    tool: Bash
+    command: 'git add . && git commit -m "update readme"'
+    expect: warn
+
+  - name: "warn-conventional-commits: allows feat: prefix"
+    tool: Bash
+    command: 'git commit -m "feat: add new feature"'
+    expect: allow
+
+  - name: "warn-conventional-commits: allows fix: prefix"
+    tool: Bash
+    command: 'git commit -m "fix: resolve null pointer"'
+    expect: allow
+
+  - name: "warn-conventional-commits: allows chore(scope): prefix"
+    tool: Bash
+    command: 'git commit -m "chore(deps): update dependencies"'
+    expect: allow
+
+  - name: "warn-conventional-commits: allows refactor: prefix"
+    tool: Bash
+    command: 'git commit -m "refactor: simplify auth logic"'
+    expect: allow
+
+  - name: "warn-conventional-commits: git commit --amend without -m (no message to check)"
+    tool: Bash
+    command: "git commit --amend"
+    expect: allow
 
   - name: "warn-conventional-commits: allows git add"
     tool: Bash
@@ -986,11 +1016,6 @@ test_cases:
     tool: Bash
     command: "git log --oneline"
     expect: allow
-
-  - name: "warn-conventional-commits: chained git add && git commit"
-    tool: Bash
-    command: 'git add . && git commit -m "message"'
-    expect: warn
   # =============================================================================
   # Echo Secrets (block-echo-secrets)
   # =============================================================================
