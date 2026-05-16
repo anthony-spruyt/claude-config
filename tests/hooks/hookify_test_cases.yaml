@@ -957,20 +957,50 @@ test_cases:
   # =============================================================================
   # Conventional Commits Warning (warn-conventional-commits)
   # =============================================================================
-  - name: "warn-conventional-commits: git commit -m"
+  - name: "warn-conventional-commits: non-conventional message"
     tool: Bash
-    command: 'git commit -m "message"'
+    command: 'git commit -m "update something"'
     expect: warn
 
-  - name: "warn-conventional-commits: git commit --amend"
+  - name: "warn-conventional-commits: missing type prefix"
     tool: Bash
-    command: "git commit --amend"
+    command: 'git commit -m "fix something without colon"'
     expect: warn
 
-  - name: "warn-conventional-commits: git commit -a -m"
+  - name: "warn-conventional-commits: git commit -a -m non-conventional"
     tool: Bash
     command: 'git commit -a -m "fix something"'
     expect: warn
+
+  - name: "warn-conventional-commits: chained git add && git commit non-conventional"
+    tool: Bash
+    command: 'git add . && git commit -m "update readme"'
+    expect: warn
+
+  - name: "warn-conventional-commits: allows feat: prefix"
+    tool: Bash
+    command: 'git commit -m "feat: add new feature"'
+    expect: allow
+
+  - name: "warn-conventional-commits: allows fix: prefix"
+    tool: Bash
+    command: 'git commit -m "fix: resolve null pointer"'
+    expect: allow
+
+  - name: "warn-conventional-commits: allows chore(scope): prefix"
+    tool: Bash
+    command: 'git commit -m "chore(deps): update dependencies"'
+    expect: allow
+
+  - name: "warn-conventional-commits: allows refactor: prefix"
+    tool: Bash
+    command: 'git commit -m "refactor: simplify auth logic"'
+    expect: allow
+
+  - name: "warn-conventional-commits: git commit --amend without -m (no message to check)"
+    tool: Bash
+    command: "git commit --amend"
+    expect: allow
 
   - name: "warn-conventional-commits: allows git add"
     tool: Bash
@@ -986,11 +1016,6 @@ test_cases:
     tool: Bash
     command: "git log --oneline"
     expect: allow
-
-  - name: "warn-conventional-commits: chained git add && git commit"
-    tool: Bash
-    command: 'git add . && git commit -m "message"'
-    expect: warn
   # =============================================================================
   # Echo Secrets (block-echo-secrets)
   # =============================================================================
@@ -1464,4 +1489,85 @@ test_cases:
   - name: "block-export-dump: allows export PATH"
     tool: Bash
     command: "export PATH"
+    expect: allow
+
+  # =============================================================================
+  # IP Leakage in GitHub Commands (block-ip-in-github)
+  # =============================================================================
+  - name: "block-ip-in-github: gh issue create with 192.168.x IP"
+    tool: Bash
+    command: 'gh issue create --title "fix node" --body "node 192.168.20.11 is down"'
+    expect: block
+
+  - name: "block-ip-in-github: gh pr create with 10.x IP"
+    tool: Bash
+    command: 'gh pr create --title "update config" --body "changed CIDR to 10.244.0.0/16"'
+    expect: block
+
+  - name: "block-ip-in-github: gh issue comment with 172.16.x IP"
+    tool: Bash
+    command: 'gh issue comment 123 --body "gateway at 172.16.0.1 unreachable"'
+    expect: block
+
+  - name: "block-ip-in-github: gh pr edit with 192.168.x IP"
+    tool: Bash
+    command: 'gh pr edit 45 --body "endpoint moved to 192.168.1.100"'
+    expect: block
+
+  - name: "block-ip-in-github: gh issue create without IP is allowed"
+    tool: Bash
+    command: 'gh issue create --title "fix node" --body "control plane node E2-1 is down"'
+    expect: allow
+
+  - name: "block-ip-in-github: gh pr create without IP is allowed"
+    tool: Bash
+    command: 'gh pr create --title "update config" --body "uses TRAEFIK_IP4 substitution"'
+    expect: allow
+
+  - name: "block-ip-in-github: gh issue view with IP in args is allowed (read-only)"
+    tool: Bash
+    command: "gh issue view 123"
+    expect: allow
+
+  - name: "block-ip-in-github: gh pr list is allowed (read-only)"
+    tool: Bash
+    command: "gh pr list"
+    expect: allow
+
+  # =============================================================================
+  # IP Leakage in Commit Messages (block-ip-in-commits)
+  # =============================================================================
+  - name: "block-ip-in-commits: git commit with 192.168.x IP in message"
+    tool: Bash
+    command: 'git commit -m "fix: update endpoint to 192.168.20.11"'
+    expect: block
+
+  - name: "block-ip-in-commits: git commit with 10.x CIDR in message"
+    tool: Bash
+    command: 'git commit -m "chore: assign 10.244.0.0/16 as pod CIDR"'
+    expect: block
+
+  - name: "block-ip-in-commits: git commit with 172.16.x IP in message"
+    tool: Bash
+    command: 'git commit -m "fix: gateway 172.16.0.1 config"'
+    expect: block
+
+  - name: "block-ip-in-commits: git commit without IP is allowed"
+    tool: Bash
+    command: 'git commit -m "fix: update endpoint to use Flux substitution"'
+    expect: allow
+
+  - name: "block-ip-in-commits: git commit with variable reference is allowed"
+    tool: Bash
+    command: 'git commit -m "chore: configure pod CIDR via cluster secrets"'
+    expect: allow
+
+  - name: "block-ip-in-commits: git add is not affected"
+    tool: Bash
+    command: "git add some-file.yaml"
+    expect: allow
+
+  - name: "block-ip-in-commits: git status is not affected"
+    tool: Bash
+    command: "git status"
     expect: allow
